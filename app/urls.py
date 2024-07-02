@@ -15,5 +15,8 @@ urlpatterns = [
     path('nongsan/',views.nongsan,name="nongsan"),
     path('logout/',views.logout ,name="logout"),
     path('profile/',views.profile ,name="profile"),
+    path('giamgia/',views.giamgia ,name="giamgia"),
+    path('order/',views.order ,name="order"),
+    path('orderdetail/',views.orderdetail ,name="orderdetail"),
     path('add_to_cart/<str:product_id>/', views.add_to_cart, name='add_to_cart'),
 ]   

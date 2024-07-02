@@ -219,6 +219,18 @@ def nongsan(request):
     context = {}
     return render(request, 'admin/nongsan.html', context)
 
+def giamgia(request):
+    context = {}
+    return render(request, 'admin/giamgia.html', context)
+
+def order(request):
+    context = {}
+    return render(request, 'admin/order.html', context)
+
+def orderdetail(request):
+    context = {}
+    return render(request, 'admin/orderdetail.html', context)
+
 def manage(request):
     context = {}
     return render(request, 'admin/adminpage.html', context)
