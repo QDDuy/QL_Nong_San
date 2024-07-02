@@ -16,4 +16,5 @@ urlpatterns = [
     path('logout/',views.logout ,name="logout"),
     path('profile/',views.profile ,name="profile"),
     path('add_to_cart/<str:product_id>/', views.add_to_cart, name='add_to_cart'),
+    path('order-history/', views.order_history, name='order_history'),
 ]   

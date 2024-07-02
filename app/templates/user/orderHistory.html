@@ -1,0 +1,99 @@
+{% include "user/header.html" %} {% load static %}
+
+<!-- Modal Search Start -->
+<div
+  class="modal fade"
+  id="searchModal"
+  tabindex="-1"
+  aria-labelledby="exampleModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content rounded-0">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Search by keyword</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body d-flex align-items-center">
+        <div class="input-group w-75 mx-auto d-flex">
+          <input
+            type="search"
+            class="form-control p-3"
+            placeholder="keywords"
+            aria-describedby="search-icon-1"
+          />
+          <span id="search-icon-1" class="input-group-text p-3"
+            ><i class="fa fa-search"></i
+          ></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal Search End -->
+
+<!-- Single Page Header start -->
+<div class="container-fluid page-header py-5">
+  <h1 class="text-center text-white display-6">Cart</h1>
+  <ol class="breadcrumb justify-content-center mb-0">
+    <li class="breadcrumb-item"><a href="#">Home</a></li>
+    <li class="breadcrumb-item"><a href="#">Pages</a></li>
+    <li class="breadcrumb-item active text-white">Cart</li>
+  </ol>
+</div>
+<!-- Single Page Header End -->
+
+<!-- Cart Page Start -->
+<div class="container-fluid py-5">
+  <div class="container py-5">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Products</th>
+            <th scope="col">Name</th>
+            <th scope="col">Price</th>
+            <th scope="col">Quantity</th>
+            <th scope="col">Total</th>
+            <th scope="col">Handle</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if orders %}
+          {% for order in orders %}
+            <tr>
+              <td>{{ order.madonhang }}</td>
+              <td>{{ order.tonggia }}</td>
+              <td>{{ order.ngaydat }}</td>
+              <td>{{ order.trangthai }}</td>
+              <td>
+                <ul>
+                  {% for detail in order.donhangdetail_set.all %}
+                    <li>
+                      <strong>Product:</strong> {{ detail.idnongsan.ten }} <br>
+                      <strong>Quantity:</strong> {{ detail.quantity }} <br>
+                      <strong>Price:</strong> {{ detail.idnongsan.gia }} <br>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="5">No orders found.</td>
+          </tr>
+        {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- Cart Page End -->
+
+{% include "user/footer.html"%}
