@@ -74,6 +74,8 @@ def cart(request):
         messages.error(request, 'Bạn chưa đăng nhập.')
         return redirect('login')  # Điều hướng đến trang đăng nhập nếu không có ID người dùng trong session
     
+    
+    
 def checkout(request):
     user_id = request.session.get('manguoidung')
     
@@ -86,36 +88,35 @@ def checkout(request):
         cart_items = Cart.objects.filter(user=user)
 
         if request.method == 'POST':
-            shipping_address = request.POST.get('shipping_address')
             total_price = sum(item.nongsan.gia * item.quantity for item in cart_items)
 
             try:
                 with transaction.atomic():
-                    # Tạo đơn hàng mới
                     order = Donhang.objects.create(
-                        madonhang=f"DH_{user_id}_{date.today().strftime('%Y%m%d')}",
+                        madonhang=f"DH_{uuid.uuid4()}",
                         manguoidung=user,
                         tonggia=total_price,
                         ngaydat=date.today(),
-                        trangthai='Pending',  # Trạng thái đơn hàng
+                        trangthai='Pending',  
                     )
 
-                    # Tạo chi tiết đơn hàng
                     for item in cart_items:
                         DonHangDetail.objects.create(
+                            ma_donhang_detail=uuid.uuid4().hex,
                             ma_donhang=order,
                             id_nongsan=item.nongsan,
                             quantity=item.quantity,
                         )
 
-                    cart_items.delete()  # Xóa giỏ hàng sau khi tạo đơn hàng thành công
+                    cart_items.delete()
 
                 messages.success(request, 'Đơn hàng của bạn đã được tạo thành công!')
-                return redirect('home')  # Điều hướng đến trang chủ sau khi thanh toán thành công
+                return redirect('home')
 
             except Exception as e:
-                messages.error(request, 'Đã xảy ra lỗi trong quá trình thanh toán. Vui lòng thử lại sau.')
-                return redirect('checkout')  # Điều hướng lại trang thanh toán nếu có lỗi xảy ra
+                print(f"Lỗi trong quá trình thanh toán: {str(e)}")  # In lỗi ra console
+                messages.error(request, f'Đã xảy ra lỗi trong quá trình thanh toán. Vui lòng thử lại sau. Chi tiết lỗi: {str(e)}')
+                return redirect('checkout')
 
         context = {
             'cart_items': cart_items,
@@ -125,8 +126,10 @@ def checkout(request):
 
     except Nguoidung.DoesNotExist:
         messages.error(request, 'Người dùng không tồn tại.')
-        return redirect('login')  # Điều hướng người dùng đến trang đăng nhập nếu người dùng không tồn tại
-
+        return redirect('login')
+    
+    
+    
 def login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -221,45 +224,30 @@ def register(request):
 
 
 def add_to_cart(request, product_id):
-    id_user = request.session.get('manguoidung')
-    product = get_object_or_404(Nongsan, idnongsan=product_id)
+    user_id = request.session.get('manguoidung')
     
-    # Mặc định số lượng là 1 khi dùng phương thức GET
-    quantity = 1
-
-    if id_user:
-        try:
-            customer = Nguoidung.objects.get(manguoidung=id_user)
-            
-            try:
-                cart = Donhang.objects.get(manguoidung=customer, trangthai='Chưa thanh toán')
-            except Donhang.DoesNotExist:
-                madonhang = f"DH-{uuid.uuid4()}"
-                cart = Donhang.objects.create(manguoidung=customer, madonhang=madonhang)
-
-            # Tạo hoặc cập nhật chi tiết đơn hàng
-            madonhangdetails = f"DHT-{uuid.uuid4()}"
-            cart_detail, created = DonHangDetail.objects.get_or_create(
-                ma_donhang_detail = madonhangdetails,
-                ma_donhang=cart,
-                id_nongsan=product,
-                defaults={'quantity': quantity}
-            )
-
-            if not created:
-                cart_detail.quantity += quantity
-                cart_detail.save()
-
-            messages.success(request, 'Sản phẩm đã được thêm vào giỏ hàng.')
-            return redirect('cart')
-
-        except Nguoidung.DoesNotExist:
-            messages.error(request, 'Không tìm thấy thông tin khách hàng.')
-            return redirect('login')
-
+    if user_id:
+        user = get_object_or_404(Nguoidung, manguoidung=user_id)
     else:
-        messages.error(request, 'Bạn chưa đăng nhập.')
-        return redirect('login')
+        return redirect('login')  # Replace 'login' with your actual login URL name
+
+    nongsan = get_object_or_404(Nongsan, idnongsan=product_id)
+    
+    quantity = 1
+    cart_id = f"C_{uuid.uuid4()}"
+    cart_item, created = Cart.objects.get_or_create(
+        cart_id=cart_id, 
+        user=user,
+        nongsan=nongsan,
+        quantity=quantity
+    )
+    if not created:
+        cart_item.quantity += quantity
+        cart_item.save()
+
+    messages.success(request, f'{nongsan.ten} has been added to your cart.')
+
+    return redirect('cart') 
     
     
 def profile(request):
@@ -304,8 +292,23 @@ def profile(request):
     return render(request, 'user/profile.html')
 
 
+def order_history(request):
+    user_id = request.session.get('manguoidung')
+    
+    if not user_id:
+        return redirect('login')  # Nếu người dùng chưa đăng nhập, điều hướng đến trang đăng nhập
 
+    try:
+        orders = Donhang.objects.filter(manguoidung=user_id).order_by('-ngaydat')  # Lấy các đơn hàng của người dùng đã đặt
+    
+        context = {
+            'orders': orders,
+        }
+        return render(request, 'user/orderHistory.html', context)
 
+    except Nguoidung.DoesNotExist:
+        return redirect('login') 
+    
 
 def nongsan(request):
     context = {}
