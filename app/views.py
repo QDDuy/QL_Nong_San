@@ -263,7 +263,49 @@ def add_to_cart(request, product_id):
     
     
 def profile(request):
+    action=request.GET.get('action')
+    if(action=='update'):
+        id_user=request.session.get('manguoidung')
+        fullname=request.POST.get('fullname')
+        email=request.POST.get('email')
+        phone=request.POST.get('phone')
+        address=request.POST.get('address')
+        try:
+            nguoidung = Nguoidung.objects.get(manguoidung=id_user)
+            nguoidung.fullname = fullname
+            nguoidung.email = email
+            nguoidung.phone = phone
+            nguoidung.address = address
+            nguoidung.save()
+            request.session['khachHang_name'] = fullname
+            request.session['khachHang_email'] = email
+            request.session['khachHang_phone'] = phone
+            request.session['khachHang_address'] = address
+            messages.success(request, 'Thông tin người dùng đã được cập nhật thành công.')
+            return render(request, 'user/profile.html')  # Redirect về trang profile sau khi cập nhật thành công
+        except Nguoidung.DoesNotExist:
+            messages.error(request, 'Người dùng không tồn tại.')
+            return redirect('profile')
+    
+    elif action == 'changeAvatar' and request.method == 'POST':
+        id_user = request.session.get('manguoidung')
+        avatar = request.FILES.get('avatar')  # Lấy tệp tải lên
+        
+        try:
+            nguoidung = Nguoidung.objects.get(manguoidung=id_user)
+            nguoidung.image = avatar  # Gán tệp tải lên cho trường image
+            nguoidung.save()
+            request.session['khachHang_image_url']=nguoidung.image.url
+            messages.success(request, 'Ảnh đại diện đã được thay đổi thành công.')
+            return redirect('profile')
+        except Nguoidung.DoesNotExist:
+            messages.error(request, 'Người dùng không tồn tại.')
+            return redirect('profile')
     return render(request, 'user/profile.html')
+
+
+
+
 
 def nongsan(request):
     context = {}

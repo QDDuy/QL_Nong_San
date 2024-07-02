@@ -166,7 +166,7 @@ class Nguoidung(models.Model):
     phone = models.CharField(db_column='Phone', max_length=20, blank=True, null=True)  # Field name made lowercase.
     email = models.CharField(db_column='Email', max_length=100, blank=True, null=True)  # Field name made lowercase.
     idtaikhoan = models.ForeignKey('Taikhoan', models.DO_NOTHING, db_column='IdTaiKhoan', blank=True, null=True)  # Field name made lowercase.
-    image=models.ImageField(null=True, blank=True)
+    image=models.ImageField(upload_to='nongsan/',null=True, blank=True)
     class Meta:
         managed = False
         db_table = 'nguoidung'
