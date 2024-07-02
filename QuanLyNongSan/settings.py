@@ -134,4 +134,4 @@ STATICFILES_DIRS=[
     os.path.join(BASE_DIR,'/static')
 ]
 MEDIA_URL='/nongsan/'
-MEDIA_ROOT = os.path.join(BASE_DIR,'app/static/admin/img/nongsan')
+MEDIA_ROOT = os.path.join(BASE_DIR,'app/static/admin/assets/img/nongsan')
