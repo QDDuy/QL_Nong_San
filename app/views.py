@@ -5,7 +5,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.apps import *
 from .models import *
 from django.contrib.auth.hashers import make_password,check_password
-
+from django.db import transaction
+from datetime import date
 import uuid
 
 def home(request ):
@@ -74,8 +75,57 @@ def cart(request):
         return redirect('login')  # Điều hướng đến trang đăng nhập nếu không có ID người dùng trong session
     
 def checkout(request):
-    context = {}
-    return render(request, 'user/checkout.html', context)
+    user_id = request.session.get('manguoidung')
+    
+    if not user_id:
+        messages.error(request, 'Bạn chưa đăng nhập.')
+        return redirect('login')
+
+    try:
+        user = Nguoidung.objects.get(manguoidung=user_id)
+        cart_items = Cart.objects.filter(user=user)
+
+        if request.method == 'POST':
+            shipping_address = request.POST.get('shipping_address')
+            total_price = sum(item.nongsan.gia * item.quantity for item in cart_items)
+
+            try:
+                with transaction.atomic():
+                    # Tạo đơn hàng mới
+                    order = Donhang.objects.create(
+                        madonhang=f"DH_{user_id}_{date.today().strftime('%Y%m%d')}",
+                        manguoidung=user,
+                        tonggia=total_price,
+                        ngaydat=date.today(),
+                        trangthai='Pending',  # Trạng thái đơn hàng
+                    )
+
+                    # Tạo chi tiết đơn hàng
+                    for item in cart_items:
+                        DonHangDetail.objects.create(
+                            ma_donhang=order,
+                            id_nongsan=item.nongsan,
+                            quantity=item.quantity,
+                        )
+
+                    cart_items.delete()  # Xóa giỏ hàng sau khi tạo đơn hàng thành công
+
+                messages.success(request, 'Đơn hàng của bạn đã được tạo thành công!')
+                return redirect('home')  # Điều hướng đến trang chủ sau khi thanh toán thành công
+
+            except Exception as e:
+                messages.error(request, 'Đã xảy ra lỗi trong quá trình thanh toán. Vui lòng thử lại sau.')
+                return redirect('checkout')  # Điều hướng lại trang thanh toán nếu có lỗi xảy ra
+
+        context = {
+            'cart_items': cart_items,
+            'total_price': sum(item.nongsan.gia * item.quantity for item in cart_items),
+        }
+        return render(request, 'user/checkout.html', context)
+
+    except Nguoidung.DoesNotExist:
+        messages.error(request, 'Người dùng không tồn tại.')
+        return redirect('login')  # Điều hướng người dùng đến trang đăng nhập nếu người dùng không tồn tại
 
 def login(request):
     if request.method == 'POST':
