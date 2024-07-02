@@ -38,6 +38,17 @@
                 <h6 class="font-weight-light">
                   Thông tin tài khoản
                 </h6>
+                <!-- Hiển thị thông báo -->
+              {% if messages %}
+              <div>
+                {% for message in messages %}
+                  <div class="alert  {% if message.tags %}alert-{{ message.tags }}{% endif %}" role="alert">
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
+            <!-- Kết thúc hiển thị thông báo -->
                 <form class="pt-3" method="post" action="{%url 'register'%}">
                   {% csrf_token %} 
                   <div class="form-group">
@@ -57,17 +68,18 @@
                       placeholder="Password"
                       name="password"
                     />
-                    <input
-                      type="password"
-                      class="form-control form-control-lg"
-                      id="exampleInputPassword1"
-                      placeholder="Password"
-                      name="role"
-                      value="user"
-                      hidden
-                    />
+                   
                   </div>
-                  
+                  <div class="form-group">
+
+                  <input
+                  type="password"
+                  class="form-control form-control-lg"
+                  id="exampleInputPassword1"
+                  placeholder="Password Confirm"
+                  name="passwordConfirm"
+                />
+                </div>
                   <h6 class="font-weight-light">
                     Thông tin người dùng
                   </h6>

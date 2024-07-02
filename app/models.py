@@ -127,11 +127,9 @@ class DjangoSession(models.Model):
 class Donhang(models.Model):
     madonhang = models.CharField(db_column='MaDonHang', primary_key=True, max_length=50)  # Field name made lowercase.
     manguoidung = models.ForeignKey('Nguoidung', models.DO_NOTHING, db_column='MaNguoiDung', blank=True, null=True)  # Field name made lowercase.
-    soluong = models.IntegerField(db_column='SoLuong', blank=True, null=True)  # Field name made lowercase.
     tonggia = models.DecimalField(db_column='TongGia', max_digits=15, decimal_places=2, blank=True, null=True)  # Field name made lowercase.
     ngaydat = models.DateField(db_column='NgayDat', blank=True, null=True)  # Field name made lowercase.
     trangthai = models.CharField(db_column='TrangThai', max_length=50, blank=True, null=True)  # Field name made lowercase.
-    hinhthucvanchuyen = models.CharField(db_column='HinhThucVanChuyen', max_length=100, blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
         managed = False
@@ -172,8 +170,7 @@ class Nguoidung(models.Model):
     class Meta:
         managed = False
         db_table = 'nguoidung'
-
-
+  
 class Nhacungcap(models.Model):
     manhacungcap = models.CharField(db_column='MaNhaCungCap', primary_key=True, max_length=50)  # Field name made lowercase.
     tennhacungcap = models.CharField(db_column='TenNhaCungCap', max_length=100, blank=True, null=True)  # Field name made lowercase.
@@ -208,12 +205,31 @@ class Nongsan(models.Model):
     gia = models.DecimalField(db_column='Gia', max_digits=15, decimal_places=2, blank=True, null=True)  # Field name made lowercase.
     trongluong = models.DecimalField(db_column='TrongLuong', max_digits=10, decimal_places=2, blank=True, null=True)  # Field name made lowercase.
     madanhmuc = models.ForeignKey(Danhmuc, models.DO_NOTHING, db_column='MaDanhMuc', blank=True, null=True)  # Field name made lowercase.
-    image=models.ImageField(null=True, blank=True)
+    image=models.ImageField(null=True, blank=True )
     class Meta:
         managed = False
         db_table = 'nongsan'
 
+class DonHangDetail(models.Model):
+        ma_donhang_detail = models.CharField(max_length=255, primary_key=True,db_column='MaDonHangDetail')
+        ma_donhang = models.ForeignKey(Donhang, on_delete=models.CASCADE, db_column='MaDonHang')
+        id_nongsan = models.ForeignKey(Nongsan, on_delete=models.CASCADE, db_column='IdNongSan')
+        quantity = models.IntegerField()
 
+        def __str__(self):
+            return self.ma_donhang_detail
+        class Meta:
+            managed = False
+            db_table = 'donhang_detail'
+class Cart(models.Model):
+    cart_id = models.CharField(primary_key=True, max_length=255)
+    user = models.ForeignKey('Nguoidung', models.DO_NOTHING)
+    nongsan = models.ForeignKey('Nongsan', models.DO_NOTHING)
+    quantity = models.IntegerField()
+
+    class Meta:
+        managed = False
+        db_table = 'cart'
 class Ordernhacungcap(models.Model):
     idorder = models.CharField(db_column='IdOrder', primary_key=True, max_length=50)  # Field name made lowercase.
     nhacungcapid = models.ForeignKey(Nhacungcap, models.DO_NOTHING, db_column='NhaCungCapId', blank=True, null=True)  # Field name made lowercase.
@@ -235,6 +251,7 @@ class Taikhoan(models.Model):
     class Meta:
         managed = False
         db_table = 'taikhoan'
+   
 
 
 class Tonkho(models.Model):

@@ -4,6 +4,10 @@ from django.shortcuts import *
 from django.contrib.auth.forms import UserCreationForm
 from django.apps import *
 from .models import *
+from django.contrib.auth.hashers import make_password,check_password
+
+import uuid
+
 def home(request ):
     
     products = Nongsan.objects.select_related('madanhmuc').all()
@@ -13,23 +17,62 @@ def home(request ):
     context = {
         'products': products,
         'categories': categories,
-        ' product_danhmuc': product_danhmuc
+        'product_danhmuc': product_danhmuc
     }
     return render(request, 'user/index.html', context)
 
 
 def shop(request):
-    context = {}
+    query = request.GET.get('search', '')
+    categories = Danhmuc.objects.all()
+
+    if query:
+        result = Nongsan.objects.filter(ten__icontains=query)
+    else:
+        result = Nongsan.objects.all()
+
+    context = {
+        'query': query,
+        'result': result,
+        'categories': categories
+    }
+
     return render(request, 'user/shop.html', context)
+
 
 def contact(request):
     context = {}
     return render(request, 'user/contact.html', context)
 
-def cart(request):
-    context = {}
-    return render(request, 'user/cart.html', context)
 
+
+
+
+def cart(request):
+    user_id = request.session.get('manguoidung')
+
+    if user_id:
+        # Lấy tất cả các mục trong giỏ hàng của người dùng đã đăng nhập
+        cart_items = Cart.objects.filter(user_id=user_id)
+
+        if not cart_items.exists():
+            messages.info(request, 'Giỏ hàng của bạn đang trống.')
+            return render(request, 'user/cart.html', {'cart_items': [], 'total_quantity': 0, 'total_price': 0})
+
+        total_quantity = sum(item.quantity for item in cart_items)
+        total_price = sum(item.nongsan.gia * item.quantity for item in cart_items)
+
+        context = {
+            'cart_items': cart_items,
+            'total_quantity': total_quantity,
+            'total_price': total_price,
+        }
+
+        return render(request, 'user/cart.html', context)
+    else:
+        messages.error(request, 'Bạn chưa đăng nhập.')
+        return redirect('login')  # Điều hướng đến trang đăng nhập nếu không có ID người dùng trong session
+    
 def checkout(request):
     context = {}
     return render(request, 'user/checkout.html', context)
@@ -38,77 +81,137 @@ def login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        
-        try:
-            user = Taikhoan.objects.get(username=username, password=password)
-        except Taikhoan.DoesNotExist:
-            user = None
-        
-        if user is not None:
-            request.session['checklogin'] = user.idtaikhoan
-            
-            try:
-                nguoidung = Nguoidung.objects.get(idtaikhoan=user.idtaikhoan)
-                request.session['khachHang_name'] = nguoidung.hovaten
-                request.session['khachHang_email'] = nguoidung.email
-                request.session['khachHang_image_url'] = nguoidung.image.url  # Store image URL instead of ImageFieldFile
-                request.session['khachHang_address'] = nguoidung.diachi  # Store image URL instead of ImageFieldFile
-                request.session['khachHang_phone'] = nguoidung.phone  # Store image URL instead of ImageFieldFile
-                
-            except Nguoidung.DoesNotExist:
-                pass
 
-            return redirect('/')
-        else:
-            messages.error(request, 'Invalid username or password. Please try again.')
+        try:
+            user = Taikhoan.objects.get(username=username)
+            if check_password(password, user.password):  # Check password using Django's check_password
+                request.session['checklogin'] = user.idtaikhoan
+                print(f"User ID from Taikhoan: {user.idtaikhoan}")
+                
+                try:
+                    nguoidung = Nguoidung.objects.get(idtaikhoan=user.idtaikhoan)
+                    request.session['manguoidung'] = nguoidung.manguoidung
+                    request.session['khachHang_name'] = nguoidung.hovaten
+                    request.session['khachHang_email'] = nguoidung.email
+                    request.session['khachHang_image_url'] = nguoidung.image.url if nguoidung.image else None
+                    request.session['khachHang_address'] = nguoidung.diachi
+                    request.session['khachHang_phone'] = nguoidung.phone
+                    print(f"User information stored in session: {nguoidung.manguoidung}, {nguoidung.hovaten}")
+                except Nguoidung.DoesNotExist:
+                    print("Nguoidung does not exist for this user.")
+                    pass
+
+                return redirect('/')
+            else:
+                print("Invalid username or password.")
+                messages.error(request, 'Invalid username or password. Please try again.')
+                return render(request, 'user/login.html', {'username': username})
+        
+        except Taikhoan.DoesNotExist:
+            print("User does not exist.")
+            messages.error(request, 'User does not exist.')
             return render(request, 'user/login.html', {'username': username})
 
     return render(request, 'user/login.html')
 
 
 def register(request):
-    #  if request.method == 'POST':
-    #     form = RegistrationForm(request.POST)
-    #     if form.is_valid():
-    #         avatar_link = "https://europe1.discourse-cdn.com/arduino/original/4X/b/8/6/b866973d0a9738af645201b3c4f4e4fe30021450.png"
-    #         name = form.cleaned_data['name']
-    #         email = form.cleaned_data['email']
-    #         address = form.cleaned_data['address']
-    #         phone = form.cleaned_data['phone']
-    #         username = form.cleaned_data['username']
-    #         password = form.cleaned_data['password']
-    #         if len(password) < 8:
-    #             messages.error(request, 'Mật khẩu phải có ít nhất 8 ký tự.')
-    #             return render(request, 'register.html', {'form': form})
-    #         if Users.objects.filter(token=username).exists():
-    #             messages.error(request, 'Tên đăng nhập đã tồn tại.')
-    #             return render(request, 'register.html', {'form': form})
-    #         if Customer.objects.filter(email=email).exists():
-    #             messages.error(request, 'Email đã tồn tại.')
-    #             return render(request, 'register.html', {'form': form})
-    #         user = Users.objects.create(
-    #             avatar=avatar_link,
-    #             account_type='customer',
-    #             token=username,
-    #             password=password,
-    #             create_at=timezone.now(),
-    #             update_at=timezone.now(),
-    #             create_by='admin',
-    #             update_by='admin'
-    #         )
-    #         customer = Customer.objects.create(
-    #             id_user=user,
-    #             name_customer=name,
-    #             email=email,
-    #             phone=phone,
-    #             address=address
-    #         )
-    #         messages.success(request, 'Đăng ký thành công. Bạn có thể đăng nhập ngay bây giờ.')
-    #         return redirect('login')  
-    #     else:
-    #         messages.error(request, 'Vui lòng kiểm tra lại thông tin đăng ký.')
-    
+    if request.method == 'POST':
+        hovaten = request.POST.get('fullname')
+        email = request.POST.get('email')
+        diachi = request.POST.get('address')
+        phone = request.POST.get('phone')
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        passwordConfirm = request.POST.get('passwordConfirm')
+        
+        if not all([hovaten, email, diachi, phone, username, password, passwordConfirm]):
+            messages.error(request, 'Vui lòng điền đầy đủ thông tin.')
+            return render(request, 'user/register.html')
+        
+        if password != passwordConfirm:
+            messages.error(request, 'Mật khẩu và xác nhận mật khẩu không khớp.')
+            return render(request, 'user/register.html')
+        
+        if len(password) < 8:
+            messages.error(request, 'Mật khẩu phải có ít nhất 8 ký tự.')
+            return render(request, 'user/register.html')
+            
+        if Taikhoan.objects.filter(username=username).exists():
+            messages.error(request, 'Tên đăng nhập đã tồn tại.')
+            return render(request, 'user/register.html')
+            
+        if Nguoidung.objects.filter(email=email).exists():
+            messages.error(request, 'Email đã tồn tại.')
+            return render(request, 'user/register.html')
+            
+        id_taikhoan = f"TK{uuid.uuid4()}"
+        id_nguoidung = f"KH{uuid.uuid4()}"
+        hashed_password = make_password(password)
+        taikhoan = Taikhoan.objects.create(
+            
+            idtaikhoan=id_taikhoan,
+            username=username,
+            password=password,
+            role='customer'
+        )
+        
+        nguoidung = Nguoidung.objects.create(
+            manguoidung=id_nguoidung,
+            hovaten=hovaten,
+            email=email,
+            diachi=diachi,
+            phone=phone,
+            idtaikhoan=taikhoan
+        )
+        
+        messages.success(request, 'Đăng ký thành công. Bạn có thể đăng nhập ngay bây giờ.')
+        return redirect('login')
     return render(request, 'user/register.html')
+
+
+def add_to_cart(request, product_id):
+    id_user = request.session.get('manguoidung')
+    product = get_object_or_404(Nongsan, idnongsan=product_id)
+    
+    # Mặc định số lượng là 1 khi dùng phương thức GET
+    quantity = 1
+
+    if id_user:
+        try:
+            customer = Nguoidung.objects.get(manguoidung=id_user)
+            
+            try:
+                cart = Donhang.objects.get(manguoidung=customer, trangthai='Chưa thanh toán')
+            except Donhang.DoesNotExist:
+                madonhang = f"DH-{uuid.uuid4()}"
+                cart = Donhang.objects.create(manguoidung=customer, madonhang=madonhang)
+
+            # Tạo hoặc cập nhật chi tiết đơn hàng
+            madonhangdetails = f"DHT-{uuid.uuid4()}"
+            cart_detail, created = DonHangDetail.objects.get_or_create(
+                ma_donhang_detail = madonhangdetails,
+                ma_donhang=cart,
+                id_nongsan=product,
+                defaults={'quantity': quantity}
+            )
+
+            if not created:
+                cart_detail.quantity += quantity
+                cart_detail.save()
+
+            messages.success(request, 'Sản phẩm đã được thêm vào giỏ hàng.')
+            return redirect('cart')
+
+        except Nguoidung.DoesNotExist:
+            messages.error(request, 'Không tìm thấy thông tin khách hàng.')
+            return redirect('login')
+
+    else:
+        messages.error(request, 'Bạn chưa đăng nhập.')
+        return redirect('login')
+    
+    
 def profile(request):
     return render(request, 'user/profile.html')
 

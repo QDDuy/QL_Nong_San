@@ -151,11 +151,9 @@ class Migration(migrations.Migration):
             name='Donhang',
             fields=[
                 ('madonhang', models.CharField(db_column='MaDonHang', max_length=50, primary_key=True, serialize=False)),
-                ('soluong', models.IntegerField(blank=True, db_column='SoLuong', null=True)),
                 ('tonggia', models.DecimalField(blank=True, db_column='TongGia', decimal_places=2, max_digits=15, null=True)),
                 ('ngaydat', models.DateField(blank=True, db_column='NgayDat', null=True)),
                 ('trangthai', models.CharField(blank=True, db_column='TrangThai', max_length=50, null=True)),
-                ('hinhthucvanchuyen', models.CharField(blank=True, db_column='HinhThucVanChuyen', max_length=100, null=True)),
             ],
             options={
                 'db_table': 'donhang',
@@ -241,7 +239,7 @@ class Migration(migrations.Migration):
                 ('mota', models.TextField(blank=True, db_column='MoTa', null=True)),
                 ('gia', models.DecimalField(blank=True, db_column='Gia', decimal_places=2, max_digits=15, null=True)),
                 ('trongluong', models.DecimalField(blank=True, db_column='TrongLuong', decimal_places=2, max_digits=10, null=True)),
-                ('image', models.ImageField(blank=True, null=True)),
+                ('image', models.ImageField(blank=True, null=True )),
 
             ],
             options={
