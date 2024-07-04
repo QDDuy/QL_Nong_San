@@ -40,7 +40,10 @@ def shop(request):
 
     return render(request, 'user/shop.html', context)
 
-
+def shop_detail(request,idnongsan):
+    nongsan=get_object_or_404(Nongsan,idnongsan=idnongsan)
+    
+    return render(request, 'user/shop-detail.html',{'nongsan':nongsan})
 def contact(request):
     context = {}
     return render(request, 'user/contact.html', context)
@@ -338,3 +341,77 @@ def logout(request):
     if 'customer_name' in request.session:
         del request.session['khachHang_name']
     return redirect('/')
+
+
+def nhanvien(request, manhanvien=None):
+    if request.method == 'GET':
+        url = request.GET.get('url')
+        if url == "deleteNV" and manhanvien:
+            try:
+                nhanvien_instance = get_object_or_404(Nhanvien, manhanvien=manhanvien)
+                nhanvien_instance.delete()
+                messages.success(request, 'Nhân viên đã được xóa thành công.')
+                return redirect('nhanvien')
+            except Nhanvien.DoesNotExist:
+                messages.error(request, 'Không tìm thấy nhân viên.')
+                return redirect('nhanvien')
+
+        # Hiển thị danh sách nhân viên
+        nhanviens = Nhanvien.objects.all()
+        return render(request, 'admin/nhanvien.html', {'nhanviens': nhanviens})
+
+    elif request.method == 'POST':
+        action = request.POST.get('action')
+        if action == "insertNV":
+            name = request.POST.get('name')
+            email = request.POST.get('email')
+            phone = request.POST.get('phone')
+            salary = request.POST.get('salary')
+            shift = request.POST.get('shift')
+            accountId = request.POST.get('accountId')
+            Image = request.POST.get('Image')
+
+            try:
+                taikhoan_instance = Taikhoan.objects.get(idtaikhoan=accountId)
+            except Taikhoan.DoesNotExist:
+                messages.error(request, 'Không tìm thấy tài khoản.')
+                return redirect('nhanvien')
+
+            nhanvienid = f"NV-{str(uuid.uuid4())[:5]}"
+            Nhanvien.objects.create(
+                manhanvien=nhanvienid,
+                tennhanvien=name,
+                email=email,
+                sodienthoai=phone,
+                luong=salary,
+                calamviec=shift,
+                idtaikhoan=taikhoan_instance,
+                image=Image
+            )
+            messages.success(request, 'Nhân viên mới đã được thêm thành công.')
+            return redirect('nhanvien')
+
+        elif action == "editNV" and manhanvien:
+            try:
+                nhanvien = get_object_or_404(Nhanvien, manhanvien=manhanvien)
+                taikhoan_instance = get_object_or_404(Taikhoan, idtaikhoan=request.POST.get('accountId'))
+                
+                nhanvien.tennhanvien = request.POST.get('name')
+                nhanvien.email = request.POST.get('email')
+                nhanvien.sodienthoai = request.POST.get('phone')
+                nhanvien.luong = request.POST.get('salary')
+                nhanvien.calamviec = request.POST.get('shift')
+                nhanvien.image = request.POST.get('Image')
+                nhanvien.idtaikhoan = taikhoan_instance
+                nhanvien.save()
+                messages.success(request, 'Thông tin nhân viên đã được cập nhật thành công.')
+                return redirect('nhanvien')
+            except Nhanvien.DoesNotExist:
+                messages.error(request, 'Không tìm thấy nhân viên.')
+                return redirect('nhanvien')
+            except Taikhoan.DoesNotExist:
+                messages.error(request, 'Không tìm thấy tài khoản.')
+                return redirect('nhanvien')
+
+    return redirect('nhanvien')
+
