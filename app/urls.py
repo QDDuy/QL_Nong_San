@@ -23,4 +23,8 @@ urlpatterns = [
     path('add_to_cart/<str:product_id>/', views.add_to_cart, name='add_to_cart'),
     path('order-history/', views.order_history, name='order_history'),
     path('nhanvien/<str:manhanvien>/', views.nhanvien, name='nhanvien_detail'),
+    path('account/',views.account,name="account"),
+    path('account/<str:idtaikhoan>/',views.account,name="account_detail"),
+    path('nguoidung/',views.nguoidung ,name="nguoidung"),
+    path('nguoidung/<str:manguoidung>/', views.nguoidung, name='nguoidung_detail'),
 ]   

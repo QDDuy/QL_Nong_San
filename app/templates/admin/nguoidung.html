@@ -45,7 +45,7 @@
   <body>
     <div class="wrapper">
       {%include 'admin/sidebar.html'%}
-      
+   
       <div class="main-panel">
         <div class="main-header">
           <div class="main-header-logo">
@@ -72,10 +72,15 @@
               </button>
             </div>
             <!-- End Logo Header -->
-            
           </div>
-          {%include 'admin/navbar.html'%}
         </div>
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
         <div class="container">
           <div class="page-inner">
             <div class="row">
@@ -100,9 +105,9 @@
                               <span class="fw-light"> Nhân viên </span>
                             </h5>
                           </div>
-                          <form method="post" action="{% url 'nhanvien' %}">
+                          <form method="post" action="{% url 'nguoidung' %}" enctype="multipart/form-data">
                             {% csrf_token %}
-                            <input type="hidden" name="action" value="insertNV" />
+                            <input type="hidden" name="action" value="insertND" />
                             <div class="modal-body">
                               <p class="small">Nhập thông tin để thêm nhân viên mới</p>
                               <div class="form-group form-group-default">
@@ -118,17 +123,9 @@
                                 <input type="text" class="form-control" placeholder="Số điện thoại" name="phone" required />
                               </div>
                               <div class="form-group form-group-default">
-                                <label>Lương</label>
-                                <input type="text" class="form-control" placeholder="Lương" name="salary" required />
+                                <label>Địa chỉ</label>
+                                <input type="text" class="form-control" placeholder="Địa chỉ" name="address" required />
                               </div>
-                              <div class="form-group form-group-default">
-                                <label>Ca làm việc</label>
-                                <select class="form-select"name="shift" required>
-                                  <option value="ngay">Ca ngày</option>
-                                    <option value="dem">Ca đêm</option>
-                                </select>
-                              </div>
-                            
                               <div class="form-group form-group-default">
                                 <label>Id tài khoản</label>
                                 <input type="text" class="form-control" placeholder="Id tài khoản" name="accountId" required />
@@ -150,32 +147,30 @@
                       <table id="add-row" class="display table table-striped table-hover">
                         <thead>
                           <tr>
-                            <th>Id nhân viên</th>
+                            <th>Mã người dùng</th>
                             <th>Họ và tên</th>
                             <th>Email</th>
                             <th>Số điện thoại</th>
-                            <th>Lương</th>
-                            <th>Ca làm việc</th>
+                            <th>Địa chỉ</th>
                             <th>Id tài khoản</th>
                             <th>Ảnh</th>
                             <th>Action</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {% for nhanvien in nhanviens %}
+                          {% for user in users %}
                           <tr>
-                            <td>{{ nhanvien.manhanvien }}</td>
-                            <td>{{ nhanvien.tennhanvien }}</td>
-                            <td>{{ nhanvien.email }}</td>
-                            <td>{{ nhanvien.sodienthoai }}</td>
-                            <td>{{ nhanvien.luong }}</td>
-                            <td>{{ nhanvien.calamviec }}</td>
-                            <td>{{ nhanvien.idtaikhoan.idtaikhoan }}</td>
-                            <td><img src="{% static 'admin/img/nongsan/'%}{{ nhanvien.image }}" class="img-thumbnail" width="50" height="50"></td>
+                            <td>{{ user.manguoidung }}</td>
+                            <td>{{ user.hovaten }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.phone }}</td>
+                            <td>{{ user.diachi }}</td>
+                            <td>{{ user.idtaikhoan.idtaikhoan }}</td>
+                            <td><img src="{% static 'admin/img/nongsan/'%}{{ user.image }}" class="img-thumbnail" width="50" height="50"></td>
                             <td>
                               <div class="form-button-action">
-                                <form action="{% url 'nhanvien_detail' nhanvien.manhanvien %}" method="get" style="display:inline;">
-                                  <input type="hidden" name="url" value="deleteNV" />
+                                <form action="{% url 'nguoidung_detail' user.manguoidung %}" method="get" enctype="multipart/form-data" style="display:inline;">
+                                  <input type="hidden" name="url" value="deleteND" />
                                   <button type="submit" class="btn btn-link btn-danger" data-bs-toggle="tooltip" title="Xóa">
                                       <i class="fa fa-times"></i>
                                   </button>
@@ -195,43 +190,37 @@
                                           <span aria-hidden="true">&times;</span>
                                         </button>
                                       </div>
-                                      <form method="post" action="{% url 'nhanvien_detail' nhanvien.manhanvien %}">
+                                      <form method="post" action="{% url 'nguoidung_detail' user.manguoidung %}" enctype="multipart/form-data">
                                         {% csrf_token %}
-                                        <input type="hidden" name="action" value="editNV" />
+                                        <input type="hidden" name="action" value="editND" />
                                         <div class="modal-body">
                                             <p class="small">Chỉnh sửa thông tin nhân viên</p>
                                             <div class="row">
                                                 <div class="col-sm-12">
                                                     <div class="form-group form-group-default">
                                                         <label>Họ và tên</label>
-                                                        <input type="text" class="form-control" name="name" value="{{ nhanvien.tennhanvien }}" />
+                                                        <input type="text" class="form-control" name="name" value="{{ user.hovaten }}" />
                                                     </div>
                                                     <div class="form-group form-group-default">
                                                         <label>Email</label>
-                                                        <input type="email" class="form-control" name="email" value="{{ nhanvien.email }}" />
+                                                        <input type="email" class="form-control" name="email" value="{{ user.email }}" />
                                                     </div>
                                                     <div class="form-group form-group-default">
                                                         <label>Số điện thoại</label>
-                                                        <input type="text" class="form-control" name="phone" value="{{ nhanvien.sodienthoai }}" />
+                                                        <input type="text" class="form-control" name="phone" value="{{ user.phone }}" />
                                                     </div>
                                                     <div class="form-group form-group-default">
-                                                        <label>Lương</label>
-                                                        <input type="text" class="form-control" name="salary" value="{{ nhanvien.luong }}" />
+                                                        <label>Địa chỉ</label>
+                                                        <input type="text" class="form-control" name="salary" value="{{ user.diachi }}" />
                                                     </div>
-                                                    <div class="form-group form-group-default">
-                                                        <label>Ca làm việc</label>
-                                                        <select class="form-control" name="shift">
-                                                            <option value="ngay" {% if nhanvien.calamviec == "ngay" %}selected{% endif %}>Ca ngày</option>
-                                                            <option value="dem" {% if nhanvien.calamviec == "dem" %}selected{% endif %}>Ca đêm</option>
-                                                        </select>
-                                                    </div>
+                                                 
                                                     <div class="form-group form-group-default">
                                                         <label>Id tài khoản</label>
-                                                        <input type="text" class="form-control" name="accountId" value="{{ nhanvien.idtaikhoan.idtaikhoan }}" />
+                                                        <input type="text" class="form-control" name="accountId" value="{{ user.idtaikhoan.idtaikhoan }}" />
                                                     </div>
                                                     <div class="form-group form-group-default">
                                                         <label>Ảnh</label>
-                                                        <input type="text" class="form-control" name="Image" value="{{ nhanvien.image }}" />
+                                                        <input type="file" class="form-control" name="Image" value="{{ user.image }}" />
                                                     </div>
                                                 </div>
                                             </div>
