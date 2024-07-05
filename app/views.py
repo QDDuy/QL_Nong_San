@@ -9,7 +9,8 @@ from django.contrib.auth.hashers import make_password,check_password
 from django.db import transaction
 from datetime import date
 import uuid
-
+from django.utils.dateparse import parse_date
+from django.db.models import Count
 def home(request ):
     
     products = Nongsan.objects.select_related('madanhmuc').all()
@@ -26,20 +27,34 @@ def home(request ):
 
 def shop(request):
     query = request.GET.get('search', '')
+    category_id = request.GET.get('category', None)
+    sort_by_price = request.GET.get('sort_by_price', None)
+
     categories = Danhmuc.objects.all()
+    categories = Danhmuc.objects.annotate(num_products=Count('nongsan'))
+    # Bộ lọc sản phẩm
+    result = Nongsan.objects.all()
 
     if query:
-        result = Nongsan.objects.filter(ten__icontains=query)
-    else:
-        result = Nongsan.objects.all()
+        result = result.filter(ten__icontains=query)
+
+    if category_id:
+        result = result.filter(madanhmuc=category_id)
+
+    if sort_by_price == 'ascending':
+        result = result.order_by('gia')  # Sắp xếp từ thấp đến cao theo giá
+    elif sort_by_price == 'descending':
+        result = result.order_by('-gia')  # Sắp xếp từ cao đến thấp theo giá
 
     context = {
         'query': query,
         'result': result,
-        'categories': categories
+        'categories': categories,
+        'current_category': category_id,
     }
 
     return render(request, 'user/shop.html', context)
+
 
 def shop_detail(request,idnongsan):
     nongsan=get_object_or_404(Nongsan,idnongsan=idnongsan)
@@ -49,24 +64,91 @@ def contact(request):
     context = {}
     return render(request, 'user/contact.html', context)
 
+def nhanvien(request, manhanvien=None):
+    if request.method == 'GET':
+        url = request.GET.get('url')
+        if url == "deleteNV" and manhanvien:
+            try:
+                nhanvien_instance = get_object_or_404(Nhanvien, manhanvien=manhanvien)
+                nhanvien_instance.delete()
+                messages.success(request, 'Nhân viên đã được xóa thành công.')
+                return redirect('nhanvien')
+            except Nhanvien.DoesNotExist:
+                messages.error(request, 'Không tìm thấy nhân viên.')
+                return redirect('nhanvien')
 
+        # Hiển thị danh sách nhân viên
+        nhanviens = Nhanvien.objects.all()
+        return render(request, 'admin/nhanvien.html', {'nhanviens': nhanviens})
 
+    elif request.method == 'POST':
+        action = request.POST.get('action')
+        if action == "insertNV":
+            name = request.POST.get('name')
+            email = request.POST.get('email')
+            phone = request.POST.get('phone')
+            salary = request.POST.get('salary')
+            shift = request.POST.get('shift')
+            accountId = request.POST.get('accountId')
+            Image = request.POST.get('Image')
+
+            try:
+                taikhoan_instance = Taikhoan.objects.get(idtaikhoan=accountId)
+            except Taikhoan.DoesNotExist:
+                messages.error(request, 'Không tìm thấy tài khoản.')
+                return redirect('nhanvien')
+
+            nhanvienid = f"NV-{str(uuid.uuid4())[:5]}"
+            Nhanvien.objects.create(
+                manhanvien=nhanvienid,
+                tennhanvien=name,
+                email=email,
+                sodienthoai=phone,
+                luong=salary,
+                calamviec=shift,
+                idtaikhoan=taikhoan_instance,
+                image=Image
+            )
+            messages.success(request, 'Nhân viên mới đã được thêm thành công.')
+            return redirect('nhanvien')
+
+        elif action == "editNV" and manhanvien:
+            try:
+                nhanvien = get_object_or_404(Nhanvien, manhanvien=manhanvien)
+                taikhoan_instance = get_object_or_404(Taikhoan, idtaikhoan=request.POST.get('accountId'))
+                nhanvien.tennhanvien = request.POST.get('name')
+                nhanvien.email = request.POST.get('email')
+                nhanvien.sodienthoai = request.POST.get('phone')
+                nhanvien.luong = request.POST.get('salary')
+                nhanvien.calamviec = request.POST.get('shift')
+                nhanvien.image = request.POST.get('Image')
+                nhanvien.idtaikhoan = taikhoan_instance
+                nhanvien.save()
+                messages.success(request, 'Thông tin nhân viên đã được cập nhật thành công.')
+                return redirect('nhanvien')
+            except Nhanvien.DoesNotExist:
+                messages.error(request, 'Không tìm thấy nhân viên.')
+                return redirect('nhanvien')
+            except Taikhoan.DoesNotExist:
+                messages.error(request, 'Không tìm thấy tài khoản.')
+                return redirect('nhanvien')
+
+    return redirect('nhanvien')
 
 
 def cart(request):
     user_id = request.session.get('manguoidung')
 
     if user_id:
-        # Lấy tất cả các mục trong giỏ hàng của người dùng đã đăng nhập
         cart_items = Cart.objects.filter(user_id=user_id)
-
+        
         if not cart_items.exists():
-            messages.info(request, 'Giỏ hàng của bạn đang trống.')
             return render(request, 'user/cart.html', {'cart_items': [], 'total_quantity': 0, 'total_price': 0})
 
         total_quantity = sum(item.quantity for item in cart_items)
         total_price = sum(item.nongsan.gia * item.quantity for item in cart_items)
-
+        for item in cart_items:
+            item.total_price = item.nongsan.gia * item.quantity
         context = {
             'cart_items': cart_items,
             'total_quantity': total_quantity,
@@ -75,10 +157,9 @@ def cart(request):
 
         return render(request, 'user/cart.html', context)
     else:
-        messages.error(request, 'Bạn chưa đăng nhập.')
         return redirect('login')  # Điều hướng đến trang đăng nhập nếu không có ID người dùng trong session
-    
-    
+
+
     
 def checkout(request):
     user_id = request.session.get('manguoidung')
@@ -90,6 +171,9 @@ def checkout(request):
     try:
         user = Nguoidung.objects.get(manguoidung=user_id)
         cart_items = Cart.objects.filter(user=user)
+        if not cart_items.exists():
+            messages.error(request, 'Giỏ hàng của bạn đang trống.')
+            return redirect('cart')
 
         if request.method == 'POST':
             total_price = sum(item.nongsan.gia * item.quantity for item in cart_items)
@@ -121,7 +205,8 @@ def checkout(request):
                 print(f"Lỗi trong quá trình thanh toán: {str(e)}")  # In lỗi ra console
                 messages.error(request, f'Đã xảy ra lỗi trong quá trình thanh toán. Vui lòng thử lại sau. Chi tiết lỗi: {str(e)}')
                 return redirect('checkout')
-
+        for item in cart_items:
+            item.total_price = item.nongsan.gia * item.quantity
         context = {
             'cart_items': cart_items,
             'total_price': sum(item.nongsan.gia * item.quantity for item in cart_items),
@@ -150,7 +235,18 @@ def login(request):
                     request.session['manguoidung'] = nguoidung.manguoidung
                     request.session['khachHang_name'] = nguoidung.hovaten
                     request.session['khachHang_email'] = nguoidung.email
-                    request.session['khachHang_image_url'] = nguoidung.image.url if nguoidung.image else None
+                    
+                    if nguoidung.image:
+                        try:
+                            image_url = nguoidung.image.url
+                            print(f"Image URL: {image_url}")
+                            request.session['khachHang_image_url'] = image_url
+                        except Exception as e:
+                            print(f"Error accessing image URL: {e}")
+                            request.session['khachHang_image_url'] = None
+                    else:
+                        request.session['khachHang_image_url'] = None
+                    
                     request.session['khachHang_address'] = nguoidung.diachi
                     request.session['khachHang_phone'] = nguoidung.phone
                     print(f"User information stored in session: {nguoidung.manguoidung}, {nguoidung.hovaten}")
@@ -170,7 +266,6 @@ def login(request):
             return render(request, 'user/login.html', {'username': username})
 
     return render(request, 'user/login.html')
-
 
 def register(request):
     if request.method == 'POST':
@@ -209,7 +304,7 @@ def register(request):
             
             idtaikhoan=id_taikhoan,
             username=username,
-            password=password,
+            password=hashed_password,
             role='customer'
         )
         
@@ -233,25 +328,24 @@ def add_to_cart(request, product_id):
     if user_id:
         user = get_object_or_404(Nguoidung, manguoidung=user_id)
     else:
-        return redirect('login')  # Replace 'login' with your actual login URL name
-
+        return redirect('login')  
     nongsan = get_object_or_404(Nongsan, idnongsan=product_id)
-    
     quantity = 1
-    cart_id = f"C_{uuid.uuid4()}"
-    cart_item, created = Cart.objects.get_or_create(
-        cart_id=cart_id, 
-        user=user,
-        nongsan=nongsan,
-        quantity=quantity
-    )
-    if not created:
+    try:
+        cart_item = Cart.objects.get(user=user, nongsan=nongsan)
         cart_item.quantity += quantity
         cart_item.save()
+    except Cart.DoesNotExist:
+        cart_id = f"cart-{uuid.uuid4()}"
+        Cart.objects.create(
+            cart_id=cart_id,
+            user=user,
+            nongsan=nongsan,
+            quantity=quantity
+        )
 
-    messages.success(request, f'{nongsan.ten} has been added to your cart.')
+    return redirect('cart')
 
-    return redirect('cart') 
     
     
 def profile(request):
@@ -315,9 +409,40 @@ def order_history(request):
 
 
 
+<<<<<<< HEAD
+=======
+def giamgia(request):
+    context = {}
+    return render(request, 'admin/giamgia.html', context)
+
+def order(request):
+    context = {}
+    return render(request, 'admin/order.html', context)
+
+def orderdetail(request):
+    context = {}
+    return render(request, 'admin/orderdetail.html', context)   
+
+>>>>>>> 6125e016e761516f36ad24c0f3b1db84b79b51dc
 def manage(request):
     context = {}
     return render(request, 'admin/adminpage.html', context)
+
+def kho(request):
+    context = {}
+    return render(request, 'admin/kho.html', context)
+
+def tonkho(request):
+    context = {}
+    return render(request, 'admin/tonkho.html', context)
+
+def nhacungcap(request):
+    context = {}
+    return render(request, 'admin/nhacungcap.html', context)
+
+def ordernhacungcap(request):
+    context = {}
+    return render(request, 'admin/ordernhacungcap.html', context)
 
 def logout(request):
     if 'checklogin' in request.session:
@@ -327,40 +452,37 @@ def logout(request):
     return redirect('/')
 
 
-def nhanvien(request, manhanvien=None):
+def kho(request, idkho=None):
     if request.method == 'GET':
         url = request.GET.get('url')
-        if url == "deleteNV" and manhanvien:
+        if url == "deletekho" and idkho:
             try:
-                nhanvien_instance = get_object_or_404(Nhanvien, manhanvien=manhanvien)
-                nhanvien_instance.delete()
-                messages.success(request, 'Nhân viên đã được xóa thành công.')
-                return redirect('nhanvien')
-            except Nhanvien.DoesNotExist:
-                messages.error(request, 'Không tìm thấy nhân viên.')
-                return redirect('nhanvien')
+                kho_instance = get_object_or_404(Kho, idkho=idkho)
+                kho_instance.delete()
+                messages.success(request, 'Kho đã được xóa thành công.')
+                return redirect('kho')
+            except Kho.DoesNotExist:
+                messages.error(request, 'Không tìm thấy kho.')
+                return redirect('kho')
 
-        # Hiển thị danh sách nhân viên
-        nhanviens = Nhanvien.objects.all()
-        return render(request, 'admin/nhanvien.html', {'nhanviens': nhanviens})
+        # Hiển thị danh sách kho
+        khos = Kho.objects.all()
+        return render(request, 'admin/kho.html', {'khos': khos})
 
     elif request.method == 'POST':
         action = request.POST.get('action')
-        if action == "insertNV":
+        if action == "insertkho":
             name = request.POST.get('name')
-            email = request.POST.get('email')
-            phone = request.POST.get('phone')
-            salary = request.POST.get('salary')
-            shift = request.POST.get('shift')
-            accountId = request.POST.get('accountId')
-            Image = request.POST.get('Image')
-
-            try:
-                taikhoan_instance = Taikhoan.objects.get(idtaikhoan=accountId)
-            except Taikhoan.DoesNotExist:
-                messages.error(request, 'Không tìm thấy tài khoản.')
-                return redirect('nhanvien')
-
+            diachi = request.POST.get('diachi')
+            khoid = f"K-{str(uuid.uuid4())[:5]}"
+            Kho.objects.create(
+                idkho=khoid,
+                name=name,
+                diachi=diachi,
+                
+            )
+            messages.success(request, 'Kho mới đã được thêm thành công.')
+            return redirect('kho')
             nhanvienid = f"NV-{str(uuid.uuid4())[:5]}"
             Nhanvien.objects.create(
                 manhanvien=nhanvienid,
@@ -379,7 +501,6 @@ def nhanvien(request, manhanvien=None):
             try:
                 nhanvien = get_object_or_404(Nhanvien, manhanvien=manhanvien)
                 taikhoan_instance = get_object_or_404(Taikhoan, idtaikhoan=request.POST.get('accountId'))
-                
                 nhanvien.tennhanvien = request.POST.get('name')
                 nhanvien.email = request.POST.get('email')
                 nhanvien.sodienthoai = request.POST.get('phone')
@@ -397,8 +518,20 @@ def nhanvien(request, manhanvien=None):
                 messages.error(request, 'Không tìm thấy tài khoản.')
                 return redirect('nhanvien')
 
-    return redirect('nhanvien')
+        elif action == "editkho" and idkho:
+            try:
+                kho = get_object_or_404(Kho, idkho=idkho)
+                
+                kho.name = request.POST.get('name')
+                kho.diachi = request.POST.get('diachi')
+                kho.save()
+                messages.success(request, 'Thông tin kho đã được cập nhật thành công.')
+                return redirect('kho')
+            except Kho.DoesNotExist:
+                messages.error(request, 'Không tìm thấy kho.')
+                return redirect('kho')
 
+<<<<<<< HEAD
 def nongsan(request, IdNongSan=None):
     if request.method == 'GET':
         url = request.GET.get('action')
@@ -668,3 +801,373 @@ def giamgia(request, magiamgia=None):
 
 
 
+=======
+    return redirect('kho')
+
+def tonkho(request, idtonkho=None):
+    if request.method == 'GET':
+        url = request.GET.get('url')
+        if url == "deleteTK" and idtonkho:
+            try:
+                tonkho_instance = get_object_or_404(Tonkho, idtonkho=idtonkho)
+                tonkho_instance.delete()
+                messages.success(request, 'Tồn Kho đã được xóa thành công.')
+                return redirect('tonkho')
+            except Tonkho.DoesNotExist:
+                messages.error(request, 'Không tìm thấy tồn kho.')
+                return redirect('tonkho')
+
+        tonkhos = Tonkho.objects.all()
+        khos = Kho.objects.all()
+        nongsans = Nongsan.objects.all()
+        return render(request, 'admin/tonkho.html', {'tonkhos': tonkhos, 'nongsans' : nongsans, 'khos':khos})
+
+    elif request.method == 'POST':
+        action = request.POST.get('action')
+        if action == "insertTK":
+            idnongsan = request.POST.get('idnongsan')
+            idkho = request.POST.get('idkho')
+            soluong = request.POST.get('soluong')
+            ngaynhapvao = request.POST.get('ngaynhapvao')
+            ngayhethan = request.POST.get('ngayhethan')
+
+            try:
+                manongsan_instance = Nongsan.objects.get(idnongsan=idnongsan)
+            except Nongsan.DoesNotExist:
+                messages.error(request, 'Không tìm thấy nông sản.')
+                return redirect('tonkho')
+
+            try:
+                makho_instance = Kho.objects.get(idkho=idkho)
+            except Kho.DoesNotExist:
+                messages.error(request, 'Không tìm thấy kho.')
+                return redirect('tonkho')
+
+            # Kiểm tra định dạng ngày
+            if not parse_date(ngaynhapvao):
+                messages.error(request, 'Định dạng ngày nhập vào không hợp lệ. Phải là YYYY-MM-DD.')
+                return redirect('tonkho')
+            if not parse_date(ngayhethan):
+                messages.error(request, 'Định dạng ngày hết hạn không hợp lệ. Phải là YYYY-MM-DD.')
+                return redirect('tonkho')
+
+            tonkhoid = f"Tk-{str(uuid.uuid4())[:5]}"
+            Tonkho.objects.create(
+                idtonkho=tonkhoid,
+                idnongsan=manongsan_instance,
+                idkho=makho_instance,
+                soluong=soluong,
+                ngaynhapvao=ngaynhapvao,
+                ngayhethan=ngayhethan,
+            )
+            messages.success(request, 'Tồn kho mới đã được thêm thành công.')
+            return redirect('tonkho')
+
+        elif action == "editTK" and idtonkho:
+            try:
+                tonkho = get_object_or_404(Tonkho, idtonkho=idtonkho)
+                manongsan_instance = get_object_or_404(Nongsan, idnongsan=request.POST.get('idnongsan'))
+                makho_instance = get_object_or_404(Kho, idkho=request.POST.get('idkho'))
+                
+                # Kiểm tra định dạng ngày
+                ngaynhapvao = request.POST.get('ngaynhapvao')
+                ngayhethan = request.POST.get('ngayhethan')
+
+                if not parse_date(ngaynhapvao):
+                    messages.error(request, 'Định dạng ngày nhập vào không hợp lệ. Phải là YYYY-MM-DD.')
+                    return redirect('tonkho')
+                if not parse_date(ngayhethan):
+                    messages.error(request, 'Định dạng ngày hết hạn không hợp lệ. Phải là YYYY-MM-DD.')
+                    return redirect('tonkho')
+
+                tonkho.idnongsan = manongsan_instance
+                tonkho.idkho = makho_instance
+                tonkho.soluong = request.POST.get('soluong')
+                tonkho.ngaynhapvao = ngaynhapvao
+                tonkho.ngayhethan = ngayhethan
+                tonkho.save()
+                messages.success(request, 'Thông tin tồn kho đã được cập nhật thành công.')
+                return redirect('tonkho')
+            except Tonkho.DoesNotExist:
+                messages.error(request, 'Không tìm thấy tồn kho.')
+                return redirect('tonkho')
+            except Nongsan.DoesNotExist:
+                messages.error(request, 'Không tìm thấy nông sản.')
+                return redirect('tonkho')
+            except Kho.DoesNotExist:
+                messages.error(request, 'Không tìm thấy kho.')
+                return redirect('tonkho')
+
+    return redirect('tonkho')
+
+def nhacungcap(request, manhacungcap=None):
+    if request.method == 'GET':
+        url = request.GET.get('url')
+        if url == "deleteNCC" and manhacungcap:
+            try:
+                nhacungcap_instance = get_object_or_404(Nhacungcap, manhacungcap=manhacungcap)
+                nhacungcap_instance.delete()
+                messages.success(request, 'Nhà cung cấp đã được xóa thành công.')
+                return redirect('nhacungcap')
+            except Nhacungcap.DoesNotExist:
+                messages.error(request, 'Không tìm thấy nhà cung cấp.')
+                return redirect('nhacungcap')
+
+        nhacungcaps = Nhacungcap.objects.all()
+        nongsans = Nongsan.objects.all()
+        return render(request, 'admin/nhacungcap.html', {'nhacungcaps': nhacungcaps, 'nongsans':nongsans})
+
+    elif request.method == 'POST':
+        action = request.POST.get('action')
+        if action == "insertNCC":
+            tennhacungcap = request.POST.get('tennhacungcap')
+            diachi = request.POST.get('diachi')
+            email = request.POST.get('email')
+            sdt = request.POST.get('sdt')
+            nongsanid = request.POST.get('nongsanid')
+
+            try:
+                manongsan_instance = Nongsan.objects.get(idnongsan=nongsanid)
+            except Nongsan.DoesNotExist:
+                messages.error(request, 'Không tìm thấy nông sản.')
+                return redirect('nhacungcap')
+
+            nhacungcapid = f"NCC-{str(uuid.uuid4())[:5]}"
+            Nhacungcap.objects.create(
+                manhacungcap=nhacungcapid,
+                tennhacungcap=tennhacungcap,
+                diachi=diachi,
+                email=email,
+                sdt=sdt,
+                nongsanid=manongsan_instance,
+            )
+            messages.success(request, 'Nhà cung cấp mới đã được thêm thành công.')
+            return redirect('nhacungcap')
+
+        elif action == "editNCC" and manhacungcap:
+            try:
+                nhacungcap = get_object_or_404(Nhacungcap, manhacungcap=manhacungcap)
+                nhacungcap.tennhacungcap = request.POST.get('tennhacungcap')
+                nhacungcap.diachi = request.POST.get('diachi')
+                nhacungcap.email = request.POST.get('email')
+                nhacungcap.sdt = request.POST.get('sdt')
+
+                # Gán giá trị cho manongsan_instance trước khi sử dụng
+                manongsan_instance = get_object_or_404(Nongsan, idnongsan=request.POST.get('nongsanid'))
+                nhacungcap.nongsanid = manongsan_instance
+
+                nhacungcap.save()
+
+                messages.success(request, 'Thông tin nhà cung cấp đã được cập nhật thành công.')
+                return redirect('nhacungcap')
+            except Nhacungcap.DoesNotExist:
+                messages.error(request, 'Không tìm thấy nhà cung cấp.')
+                return redirect('nhacungcap')
+            except Nongsan.DoesNotExist:
+                messages.error(request, 'Không tìm thấy nông sản.')
+                return redirect('nhacungcap')
+
+    return redirect('nhacungcap')
+
+
+def ordernhacungcap(request, idorder=None):
+    if request.method == 'GET':
+        url = request.GET.get('url')
+        if url == "deleteOD" and idorder:
+            try:
+                ordernhacungcap_instance = get_object_or_404(Ordernhacungcap, idorder=idorder)
+                ordernhacungcap_instance.delete()
+                messages.success(request, 'Order đã được xóa thành công.')
+                return redirect('ordernhacungcap')
+            except Ordernhacungcap.DoesNotExist:
+                messages.error(request, 'Không tìm thấy Order.')
+                return redirect('ordernhacungcap')
+
+        ordernhacungcaps = Ordernhacungcap.objects.all()
+        nhacungcaps = Nhacungcap.objects.all()
+        return render(request, 'admin/ordernhacungcap.html', {'ordernhacungcaps': ordernhacungcaps,'nhacungcaps':nhacungcaps})
+
+    elif request.method == 'POST':
+        action = request.POST.get('action')
+        if action == "insertOD":
+            nhacungcapid = request.POST.get('nhacungcapid')
+            ngaygiaodich = request.POST.get('ngaygiaodich')
+            loaigiaodich = request.POST.get('loaigiaodich')
+            soluong = request.POST.get('soluong')
+            try:
+                manhacungcap_instance = Nhacungcap.objects.get(manhacungcap=nhacungcapid)
+            except Nhacungcap.DoesNotExist:
+                messages.error(request, 'Không tìm thấy mã nhà cng cấp.')
+                return redirect('ordernhacungcap')
+
+            # Kiểm tra định dạng ngày
+            if not parse_date(ngaygiaodich):
+                messages.error(request, 'Định dạng ngày nhập vào không hợp lệ. Phải là YYYY-MM-DD.')
+                return redirect('ordernhacungcap')
+
+           
+            
+            orderid = f"OD-{str(uuid.uuid4())[:5]}"
+            Ordernhacungcap.objects.create(
+                idorder=orderid,
+                nhacungcapid=manhacungcap_instance,
+                ngaygiaodich=ngaygiaodich,
+                loaigiaodich=loaigiaodich,
+                soluong=soluong,
+            )
+            messages.success(request, 'Order mới đã được thêm thành công.')
+            return redirect('ordernhacungcap')
+
+        elif action == "editOD" and idorder:
+            try:
+                ordernhacungcap = get_object_or_404(Ordernhacungcap, idorder=idorder)
+                manhacungcap_instance = get_object_or_404(Nhacungcap, manhacungcap=request.POST.get('nhacungcapid'))
+                
+                
+                # Kiểm tra định dạng ngày
+                ngaygiaodich = request.POST.get('ngaygiaodich')
+                
+                if not parse_date(ngaygiaodich):
+                    messages.error(request, 'Định dạng ngày nhập vào không hợp lệ. Phải là YYYY-MM-DD.')
+                    return redirect('ordernhacungcap')
+
+                ordernhacungcap.nhacungcapid = manhacungcap_instance
+                ordernhacungcap.ngaygiaodich = ngaygiaodich
+                ordernhacungcap.loaigiaodich = request.POST.get('loaigiaodich')
+                ordernhacungcap.soluong = request.POST.get('soluong')
+                ordernhacungcap.save()
+                messages.success(request, 'Thông tin order đã được cập nhật thành công.')
+                return redirect('ordernhacungcap')
+            except Ordernhacungcap.DoesNotExist:
+                messages.error(request, 'Không tìm thấy Order.')
+                return redirect('ordernhacungcap')
+            except Nhacungcap.DoesNotExist:
+                messages.error(request, 'Không tìm thấy Mã nhà cung cấp.')
+                return redirect('ordernhacungcap')
+
+    return redirect('ordernhacungcap')
+
+def account(request, idtaikhoan=None):
+    if request.method == 'GET':
+        url = request.GET.get('url')
+        if url == "deleteAcc" and idtaikhoan:
+            try:
+                taikhoan = get_object_or_404(Taikhoan, idtaikhoan=idtaikhoan)
+                taikhoan.delete()
+                messages.success(request, 'Nhân viên đã được xóa thành công.')
+                return redirect('account')
+            except Nhanvien.DoesNotExist:
+                messages.error(request, 'Không tìm thấy nhân viên.')
+                return redirect('account')
+
+        # Hiển thị danh sách nhân viên
+        accounts = Taikhoan.objects.all()
+        return render(request, 'admin/account.html', {'accounts': accounts})
+
+    elif request.method == 'POST':
+        action = request.POST.get('action')
+        if action == "insertAcc":
+            username = request.POST.get('username')
+            password = request.POST.get('password')
+            role = request.POST.get('role')
+
+            idaccount= f"TK-{str(uuid.uuid4())[:5]}"
+            hashed_password = make_password(password)
+            
+            Taikhoan.objects.create(
+                idtaikhoan=idaccount,
+                username=username,
+                password=hashed_password,
+                role=role,
+            )
+            messages.success(request, 'Thêm tài khoản thành công.')
+            return redirect('account')
+
+        elif action == "editAcc" and idtaikhoan:
+            try:
+                taikhoan = get_object_or_404(Taikhoan, idtaikhoan=idtaikhoan)
+                taikhoan.tennhanvien = request.POST.get('username')
+                taikhoan.email = request.POST.get('password')
+                taikhoan.role = request.POST.get('role')
+                taikhoan.save()
+                messages.success(request, 'Thông tin tài khoản đã được cập nhật thành công.')
+                return redirect('account')
+            except Nhanvien.DoesNotExist:
+                messages.error(request, 'Không tìm thấy nhân viên.')
+                return redirect('account')
+            except Taikhoan.DoesNotExist:
+                messages.error(request, 'Không tìm thấy tài khoản.')
+                return redirect('account')
+
+    return redirect('account')
+
+
+
+def nguoidung(request, manguoidung=None):
+    if request.method == 'GET':
+        url = request.GET.get('url')
+        if url == "deleteND" and manguoidung:
+            try:
+                nguoidung = get_object_or_404(Nguoidung, manguoidung=manguoidung)
+                nguoidung.delete()
+                messages.success(request, 'Người dùng đã được xóa thành công.')
+                return redirect('nguoidung')
+            except Nguoidung.DoesNotExist:
+                messages.error(request, 'Không tìm thấy người dùng.')
+                return redirect('nguoidung')
+
+        # Hiển thị danh sách nhân viên
+        users = Nguoidung.objects.all()
+        return render(request, 'admin/nguoidung.html', {'users': users})
+
+    elif request.method == 'POST':
+        action = request.POST.get('action')
+        if action == "insertND":
+            name = request.POST.get('name')
+            email = request.POST.get('email')
+            phone = request.POST.get('phone')
+            address = request.POST.get('address')
+            accountId = request.POST.get('accountId')
+            Image = request.POST.get('Image')
+
+            try:
+                taikhoan_instance = Taikhoan.objects.get(idtaikhoan=accountId)
+            except Taikhoan.DoesNotExist:
+                messages.error(request, 'Không tìm thấy tài khoản.')
+                return redirect('nguoidung')
+
+            idnguoidung = f"ND-{str(uuid.uuid4())[:5]}"
+            Nguoidung.objects.create(
+                manguoidung=idnguoidung,
+                hovaten=name,
+                email=email,
+                phone=phone,
+                diachi=address,
+                idtaikhoan=taikhoan_instance,
+                image=Image
+            )
+            messages.success(request, 'Người dùng đã được thêm thành công.')
+            return redirect('nguoidung')
+
+        elif action == "editND" and manguoidung:
+            try:
+                nguoidung = get_object_or_404(Nguoidung, manguoidung=manguoidung)
+                taikhoan_instance = get_object_or_404(Taikhoan, idtaikhoan=request.POST.get('accountId'))
+                nguoidung.hovaten = request.POST.get('name')
+                manguoidung.email = request.POST.get('email')
+                manguoidung.phone = request.POST.get('phone')
+                manguoidung.diachi = request.POST.get('address')
+                manguoidung.image = request.POST.get('Image')
+                manguoidung.idtaikhoan = taikhoan_instance
+                manguoidung.save()
+                messages.success(request, 'Thông tin người dùng đã được cập nhật thành công.')
+                return redirect('nguoidung')
+            except Nguoidung.DoesNotExist:
+                messages.error(request, 'Không tìm thấy người dùng.')
+                return redirect('nguoidung')
+            except Taikhoan.DoesNotExist:
+                messages.error(request, 'Không tìm thấy tài khoản.')
+                return redirect('nguoidung')
+
+    return redirect('nguoidung')
+>>>>>>> 6125e016e761516f36ad24c0f3b1db84b79b51dc

@@ -234,7 +234,7 @@ class Ordernhacungcap(models.Model):
     idorder = models.CharField(db_column='IdOrder', primary_key=True, max_length=50)  # Field name made lowercase.
     nhacungcapid = models.ForeignKey(Nhacungcap, models.DO_NOTHING, db_column='NhaCungCapId', blank=True, null=True)  # Field name made lowercase.
     ngaygiaodich = models.DateField(db_column='NgayGiaoDich', blank=True, null=True)  # Field name made lowercase.
-    loaigiaodich = models.CharField(db_column='LoaiGiaoDich', max_length=8, blank=True, null=True)  # Field name made lowercase.
+    loaigiaodich = models.CharField(db_column='LoaiGiaoDich', max_length=255, blank=True, null=True)  # Field name made lowercase.
     soluong = models.IntegerField(db_column='SoLuong', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
