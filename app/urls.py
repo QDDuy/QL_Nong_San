@@ -29,5 +29,9 @@ urlpatterns = [
     path('nhacungcap/<str:manhacungcap>',views.nhacungcap ,name="nhacungcap_hh"),
     path('ordernhacungcap/',views.ordernhacungcap ,name="ordernhacungcap"),
     path('ordernhacungcap/<str:idorder>',views.ordernhacungcap ,name="ordernhacungcap_hh"),
-
+    path('nhanvien/<str:manhanvien>/', views.nhanvien, name='nhanvien_detail'),
+    path('account/',views.account,name="account"),
+    path('account/<str:idtaikhoan>/',views.account,name="account_detail"),
+    path('nguoidung/',views.nguoidung ,name="nguoidung"),
+    path('nguoidung/<str:manguoidung>/', views.nguoidung, name='nguoidung_detail'),
 ]   

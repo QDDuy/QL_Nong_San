@@ -129,9 +129,9 @@
                     </div>
                   </th>
                   <td class="py-5">{{item.nongsan.ten}}</td>
-                  <td class="py-5">${{item.nongsan.gia}}</td>
+                  <td class="py-5">{{item.nongsan.gia|floatformat:0 }} VNĐ</td>
                   <td class="py-5">{{item.quantity}}</td>
-                  <td class="py-5">${{item.total_price}}</td>
+                  <td class="py-5">{{item.total_price|floatformat:0 }} VNĐ</td>
                 </tr>
               {%endfor %}
                {%endif%}
@@ -145,7 +145,7 @@
                   <td class="py-5"></td>
                   <td class="py-5">
                     <div class="py-3 border-bottom border-top">
-                      <p class="mb-0 text-dark">${{total_price}}</p>
+                      <p class="mb-0 text-dark">{{total_price|floatformat:0}} VNĐ</p>
                     </div>
                   </td>
                 </tr>

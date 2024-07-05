@@ -73,14 +73,9 @@
             </div>
             <!-- End Logo Header -->
           </div>
+          {%include 'admin/navbar.html'%}
         </div>
-        {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
+        
         <div class="container">
           <div class="page-inner">
             <div class="row">
@@ -128,7 +123,11 @@
                               </div>
                               <div class="form-group form-group-default">
                                 <label>Nông sản Id</label>
-                                <input type="text" class="form-control" placeholder="Nông sản Id" name="nongsanid" required />
+                                <select class="form-control" name="nongsanid" required>
+                                    {% for nongsan in nongsans %}
+                                    <option value="{{ nongsan.idnongsan }}">{{ nongsan.idnongsan }}</option>
+                                    {% endfor %}
+                                </select>
                               </div>
                               
                             </div>
@@ -210,8 +209,14 @@
                                                     </div>
                                                     
                                                     <div class="form-group form-group-default">
-                                                        <label>Nông sản Id</label>
-                                                        <input type="text" class="form-control" name="nongsanid" value="{{ nhacungcap.nongsanid.idnongsan }}" />
+                                                      <label>Nông sản Id</label>
+                                                      <select class="form-control" name="nongsanid">
+                                                          {% for nongsan in nongsans %}
+                                                          <option value="{{ nongsan.idnongsan }}" {% if nhacungcap.nongsanid == nongsan.idnongsan %}selected{% endif %}>
+                                                              {{ nongsan.idnongsan }} 
+                                                          </option>
+                                                          {% endfor %}
+                                                      </select>
                                                     </div>
                                                 </div>
                                             </div>

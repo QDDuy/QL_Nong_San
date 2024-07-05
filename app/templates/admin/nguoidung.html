@@ -73,7 +73,7 @@
             </div>
             <!-- End Logo Header -->
           </div>
-          {%include 'admin/navbar.html'%}
+          
         </div>
         
         <div class="container">
@@ -83,9 +83,9 @@
                 <div class="card">
                   <div class="card-header">
                     <div class="d-flex align-items-center">
-                      <h4 class="card-title">Quản lý kho</h4>
+                      <h4 class="card-title">Danh sách nhân viên</h4>
                       <button class="btn btn-primary btn-round ms-auto" data-bs-toggle="modal" data-bs-target="#addRowModal">
-                        <i class="fa fa-plus"></i> Thêm kho
+                        <i class="fa fa-plus"></i> Thêm nhân viên
                       </button>
                     </div>
                   </div>
@@ -97,24 +97,38 @@
                           <div class="modal-header border-0">
                             <h5 class="modal-title">
                               <span class="fw-mediumbold">Thêm</span>
-                              <span class="fw-light"> Kho </span>
+                              <span class="fw-light"> Nhân viên </span>
                             </h5>
                           </div>
-                          <form method="post" action="{% url 'kho' %}">
+                          <form method="post" action="{% url 'nguoidung' %}" enctype="multipart/form-data">
                             {% csrf_token %}
-                            <input type="hidden" name="action" value="insertkho" />
+                            <input type="hidden" name="action" value="insertND" />
                             <div class="modal-body">
-                              <p class="small">Nhập thông tin để thêm kho mới</p>
-                              
+                              <p class="small">Nhập thông tin để thêm nhân viên mới</p>
                               <div class="form-group form-group-default">
-                                <label>Tên kho</label>
-                                <input type="text" class="form-control" placeholder="Tên kho" name="name" required />
+                                <label>Họ và tên</label>
+                                <input type="text" class="form-control" placeholder="Họ và tên" name="name" required />
+                              </div>
+                              <div class="form-group form-group-default">
+                                <label>Email</label>
+                                <input type="email" class="form-control" placeholder="Email" name="email" required />
+                              </div>
+                              <div class="form-group form-group-default">
+                                <label>Số điện thoại</label>
+                                <input type="text" class="form-control" placeholder="Số điện thoại" name="phone" required />
                               </div>
                               <div class="form-group form-group-default">
                                 <label>Địa chỉ</label>
-                                <input type="text" class="form-control" placeholder="Địa chỉ" name="diachi" required />
+                                <input type="text" class="form-control" placeholder="Địa chỉ" name="address" required />
                               </div>
-                              
+                              <div class="form-group form-group-default">
+                                <label>Id tài khoản</label>
+                                <input type="text" class="form-control" placeholder="Id tài khoản" name="accountId" required />
+                              </div>
+                              <div class="form-group form-group-default">
+                                <label>Ảnh</label>
+                                <input type="file" class="form-control" placeholder="Đường dẫn ảnh" name="Image" />
+                              </div>
                             </div>
                             <div class="modal-footer border-0">
                               <button type="submit" class="btn btn-primary">Thêm</button>
@@ -128,55 +142,80 @@
                       <table id="add-row" class="display table table-striped table-hover">
                         <thead>
                           <tr>
-                            <th>Mã kho</th>
-                            <th>Tên kho</th>
+                            <th>Mã người dùng</th>
+                            <th>Họ và tên</th>
+                            <th>Email</th>
+                            <th>Số điện thoại</th>
                             <th>Địa chỉ</th>
+                            <th>Id tài khoản</th>
+                            <th>Ảnh</th>
                             <th>Action</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {% for kho in khos %}
+                          {% for user in users %}
                           <tr>
-                            <td>{{ kho.idkho }}</td>
-                            <td>{{ kho.name }}</td>
-                            <td>{{ kho.diachi }}</td>
+                            <td>{{ user.manguoidung }}</td>
+                            <td>{{ user.hovaten }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.phone }}</td>
+                            <td>{{ user.diachi }}</td>
+                            <td>{{ user.idtaikhoan.idtaikhoan }}</td>
+                            <td><img src="{% static 'admin/img/nongsan/'%}{{ user.image }}" class="img-thumbnail" width="50" height="50"></td>
                             <td>
                               <div class="form-button-action">
-                                <form action="{% url 'kho_hh' kho.idkho %}" method="get" style="display:inline;">
-                                  <input type="hidden" name="url" value="deletekho" />
+                                <form action="{% url 'nguoidung_detail' user.manguoidung %}" method="get" enctype="multipart/form-data" style="display:inline;">
+                                  <input type="hidden" name="url" value="deleteND" />
                                   <button type="submit" class="btn btn-link btn-danger" data-bs-toggle="tooltip" title="Xóa">
                                       <i class="fa fa-times"></i>
                                   </button>
                               </form>
-                                <button type="button" title="Sửa thông tin" class="btn btn-link btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#editKho{{ kho.idkho }}">
+                                <button type="button" title="Sửa thông tin" class="btn btn-link btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#editNhanvien{{ nhanvien.manhanvien }}">
                                   <i class="fa fa-edit"></i>
                                 </button>
-                                <div class="modal fade" id="editKho{{ kho.idkho }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                <div class="modal fade" id="editNhanvien{{ nhanvien.manhanvien }}" tabindex="-1" role="dialog" aria-hidden="true">
                                   <div class="modal-dialog" role="document">
                                     <div class="modal-content">
                                       <div class="modal-header border-0">
                                         <h5 class="modal-title">
                                           <span class="fw-mediumbold">Chỉnh sửa</span>
-                                          <span class="fw-light">Kho</span>
+                                          <span class="fw-light">Nhân viên</span>
                                         </h5>
                                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                           <span aria-hidden="true">&times;</span>
                                         </button>
                                       </div>
-                                      <form method="post" action="{% url 'kho_hh' kho.idkho %}">
+                                      <form method="post" action="{% url 'nguoidung_detail' user.manguoidung %}" enctype="multipart/form-data">
                                         {% csrf_token %}
-                                        <input type="hidden" name="action" value="editkho" />
+                                        <input type="hidden" name="action" value="editND" />
                                         <div class="modal-body">
-                                            <p class="small">Chỉnh sửa thông tin kho</p>
+                                            <p class="small">Chỉnh sửa thông tin nhân viên</p>
                                             <div class="row">
                                                 <div class="col-sm-12">
                                                     <div class="form-group form-group-default">
-                                                        <label>Tên kho</label>
-                                                        <input type="text" class="form-control" name="name" value="{{ kho.name }}" />
+                                                        <label>Họ và tên</label>
+                                                        <input type="text" class="form-control" name="name" value="{{ user.hovaten }}" />
+                                                    </div>
+                                                    <div class="form-group form-group-default">
+                                                        <label>Email</label>
+                                                        <input type="email" class="form-control" name="email" value="{{ user.email }}" />
+                                                    </div>
+                                                    <div class="form-group form-group-default">
+                                                        <label>Số điện thoại</label>
+                                                        <input type="text" class="form-control" name="phone" value="{{ user.phone }}" />
                                                     </div>
                                                     <div class="form-group form-group-default">
                                                         <label>Địa chỉ</label>
-                                                        <input type="text" class="form-control" name="diachi" value="{{ kho.diachi }}" />
+                                                        <input type="text" class="form-control" name="salary" value="{{ user.diachi }}" />
+                                                    </div>
+                                                 
+                                                    <div class="form-group form-group-default">
+                                                        <label>Id tài khoản</label>
+                                                        <input type="text" class="form-control" name="accountId" value="{{ user.idtaikhoan.idtaikhoan }}" />
+                                                    </div>
+                                                    <div class="form-group form-group-default">
+                                                        <label>Ảnh</label>
+                                                        <input type="file" class="form-control" name="Image" value="{{ user.image }}" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -193,7 +232,7 @@
                           </tr>
                           {% empty %}
                           <tr>
-                            <td colspan="9">Không có kho nào.</td>
+                            <td colspan="9">Không có nhân viên nào.</td>
                           </tr>
                           {% endfor %}
                         </tbody>
