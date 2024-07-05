@@ -1,293 +1,273 @@
 {% load static %}
-{% include 'admin/header.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Datatables - Kaiadmin Bootstrap 5 Admin Dashboard</title>
+    <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+    <link rel="icon" href="{% static 'img/kaiadmin/favicon.ico' %}" type="image/x-icon" />
 
+    <!-- Fonts and icons -->
+    <script src="{% static 'admin/assets/js/plugin/webfont/webfont.min.js' %}"></script>
+    <script>
+        WebFont.load({
+            google: { families: ["Public Sans:300,400,500,600,700"] },
+            custom: {
+                families: [
+                    "Font Awesome 5 Solid",
+                    "Font Awesome 5 Regular",
+                    "Font Awesome 5 Brands",
+                    "simple-line-icons",
+                ],
+                urls: ["{% static 'admin/assets/css/fonts.min.css' %}"],
+            },
+            active: function () {
+                sessionStorage.fonts = true;
+            },
+        });
+    </script>
+
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="{% static 'admin/assets/css/bootstrap.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'admin/assets/css/plugins.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'admin/assets/css/kaiadmin.min.css' %}" />
+
+    <!-- CSS Just for demo purpose, don't include it in your project -->
+    <link rel="stylesheet" href="{% static 'admin/assets/css/demo.css' %}" />
+</head>
+<body>
 <div class="wrapper">
-  {% include 'admin/sidebar.html' %}
+    {% include 'admin/sidebar.html' %}
 
-  <div class="main-panel">
-    <div class="main-header">
-      <div class="main-header-logo">
-        <!-- Logo Header -->
-        <div class="logo-header" data-background-color="dark">
-          <a href="../index.html" class="logo">
-            <img
-              src="{% static 'admin/assets/img/kaiadmin/logo_light.svg' %}"
-              alt="navbar brand"
-              class="navbar-brand"
-              height="20"
-            />
-          </a>
-          <div class="nav-toggle">
-            <button class="btn btn-toggle toggle-sidebar">
-              <i class="gg-menu-right"></i>
-            </button>
-            <button class="btn btn-toggle sidenav-toggler">
-              <i class="gg-menu-left"></i>
-            </button>
-          </div>
-          <button class="topbar-toggler more">
-            <i class="gg-more-vertical-alt"></i>
-          </button>
-        </div>
-        <!-- End Logo Header -->
-      </div>
-      <!-- Navbar Header -->
-      <nav class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bottom">
-        <div class="container-fluid">
-          <ul class="navbar-nav topbar-nav ms-md-auto align-items-center">
-            <li class="nav-item topbar-user dropdown hidden-caret">
-              <a class="dropdown-toggle profile-pic" data-bs-toggle="dropdown" href="#" aria-expanded="false">
-                <div class="avatar-sm">
-                  <img src="{% static 'admin/assets/img/profile.jpg' %}" alt="..." class="avatar-img rounded-circle" />
-                </div>
-                <span class="profile-username">
-                  <span class="op-7">Hi,</span>
-                  <span class="fw-bold">Hizrian</span>
-                </span>
-              </a>
-              <ul class="dropdown-menu dropdown-user animated fadeIn">
-                <div class="dropdown-user-scroll scrollbar-outer">
-                  <li>
-                    <div class="user-box">
-                      <div class="avatar-lg">
-                        <img src="{% static 'admin/assets/img/profile.jpg' %}" alt="image profile" class="avatar-img rounded" />
-                      </div>
-                      <div class="u-text">
-                        <h4>Hizrian</h4>
-                        <p class="text-muted">hello@example.com</p>
-                        <a href="profile.html" class="btn btn-xs btn-secondary btn-sm">View Profile</a>
-                      </div>
-                    </div>
-                  </li>
-                  <li>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#">My Profile</a>
-                    <a class="dropdown-item" href="#">My Balance</a>
-                    <a class="dropdown-item" href="#">Inbox</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#">Account Setting</a>
-                    <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#">Logout</a>
-                  </li>
-                </div>
-              </ul>
-            </li>
-          </ul>
-        </div>
-      </nav>
-      <!-- End Navbar -->
-    </div>
-
-    <div class="container">
-      <div class="page-inner">
-        <div class="page-header">
-          <ul class="breadcrumbs mb-3">
-            <li class="nav-home">
-              <a href="#">
-                <i class="icon-home"></i>
-              </a>
-            </li>
-            <li class="separator">
-              <i class="icon-arrow-right"></i>
-            </li>
-            <li class="nav-item">
-              <a href="#">Tables</a>
-            </li>
-            <li class="separator">
-              <i class="icon-arrow-right"></i>
-            </li>
-            <li class="nav-item">
-              <a href="#">Datatables</a>
-            </li>
-          </ul>
-        </div>
-        <div class="row">
-          <div class="col-md-12">
-            <div class="card">
-              <div class="card-header">
-                <div class="d-flex align-items-center">
-                  <h4 class="card-title">Quản lý nông sản</h4>
-                  <button class="btn btn-primary btn-round ms-auto" data-bs-toggle="modal" data-bs-target="#addRowModal">
-                    <i class="fa fa-plus"></i>
-                    Add Row
-                  </button>
-                </div>
-              </div>
-              <div class="card-body">
-                <!-- Modal -->
-                <div class="modal fade" id="addRowModal" tabindex="-1" role="dialog" aria-hidden="true">
-                  <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                      <div class="modal-header border-0">
-                        <h5 class="modal-title">
-                          <span class="fw-mediumbold"> New</span>
-                          <span class="fw-light"> Row </span>
-                        </h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                          <span aria-hidden="true">&times;</span>
+    <div class="main-panel">
+        <div class="main-header">
+            <div class="main-header-logo">
+                <!-- Logo Header -->
+                <div class="logo-header" data-background-color="dark">
+                    <a href="../index.html" class="logo">
+                        <img src="{% static 'admin/assets/img/kaiadmin/logo_light.svg' %}" alt="navbar brand" class="navbar-brand" height="20" />
+                    </a>
+                    <div class="nav-toggle">
+                        <button class="btn btn-toggle toggle-sidebar">
+                            <i class="gg-menu-right"></i>
                         </button>
-                      </div>
-                      <div class="modal-body">
-                        <p class="small">
-                          Create a new row using this form, make sure you fill them all
-                        </p>
-                        <form>
-                          <div class="row">
-                            <div class="col-sm-12">
-                              <div class="form-group form-group-default">
-                                <label>Mã Nông Sản</label>
-                                <input id="addMaNongSan" type="text" class="form-control" placeholder="Nhập mã nông sản" />
-                              </div>
-                            </div>
-                            <div class="col-sm-12">
-                              <div class="form-group form-group-default">
-                                <label>Tên Nông Sản</label>
-                                <input id="addTenNongSan" type="text" class="form-control" placeholder="Nhập tên nông sản" />
-                              </div>
-                            </div>
-                            <div class="col-sm-12">
-                              <div class="form-group form-group-default">
-                                <label>Mô Tả</label>
-                                <input id="addMoTa" type="text" class="form-control" placeholder="Nhập mô tả" />
-                              </div>
-                            </div>
-                            <div class="col-sm-12">
-                              <div class="form-group form-group-default">
-                                <label>Giá</label>
-                                <input id="addGia" type="text" class="form-control" placeholder="Nhập giá" />
-                              </div>
-                            </div>
-                            <div class="col-sm-12">
-                              <div class="form-group form-group-default">
-                                <label>Trọng Lượng</label>
-                                <input id="addTrongLuong" type="text" class="form-control" placeholder="Nhập trọng lượng" />
-                              </div>
-                            </div>
-                            <div class="col-sm-12">
-                              <div class="form-group form-group-default">
-                                <label>Mã Danh Mục</label>
-                                <input id="addMaDanhMuc" type="text" class="form-control" placeholder="Nhập mã danh mục" />
-                              </div>
-                            </div>
-                            <div class="col-sm-12">
-                              <div class="form-group form-group-default">
-                                <label>Hình Ảnh</label>
-                                <input id="addHinhAnh" type="file" class="form-control" />
-                              </div>
-                            </div>
-                          </div>
-                        </form>
-                      </div>
-                      <div class="modal-footer border-0">
-                        <button type="button" id="addRowButton" class="btn btn-primary">Add</button>
-                        <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
-                      </div>
+                        <button class="btn btn-toggle sidenav-toggler">
+                            <i class="gg-menu-left"></i>
+                        </button>
                     </div>
-                  </div>
+                    <button class="topbar-toggler more">
+                        <i class="gg-more-vertical-alt"></i>
+                    </button>
                 </div>
-
-                <div class="table-responsive">
-                  <table id="add-row" class="display table table-striped table-hover">
-                    <thead>
-                      <tr>
-                        <th>MÃ NÔNG SẢN</th>
-                        <th>TÊN NÔNG SẢN</th>
-                        <th>MÔ TẢ</th>
-                        <th>GIÁ</th>
-                        <th>TRỌNG LƯỢNG</th>
-                        <th>MÃ DANH MỤC</th>
-                        <th>HÌNH ẢNH</th>
-                        <th style="width: 10%">Action</th>
-                      </tr>
-                    </thead>
-                    <tfoot>
-                      <tr>
-                        <th>MÃ NÔNG SẢN</th>
-                        <th>TÊN NÔNG SẢN</th>
-                        <th>MÔ TẢ</th>
-                        <th>GIÁ</th>
-                        <th>TRỌNG LƯỢNG</th>
-                        <th>MÃ DANH MỤC</th>
-                        <th>HÌNH ẢNH</th>
-                        <th>Action</th>
-                      </tr>
-                    </tfoot>
-                    <tbody>
-                      <tr>
-                        <td>Tiger Nixon </td>
-                        <td>System Architect</td>
-                        <td>Edinburgh</td>
-                        <td>320800</td>
-                        <td>61</td>
-                        <td>1</td>
-                        <td><img src="path/to/image.jpg" alt="image" height="50"/></td>
-                        <td>
-                          <div class="form-button-action">
-                            <button type="button" data-bs-toggle="tooltip" title="Edit Task" class="btn btn-link btn-primary btn-lg">
-                              <i class="fa fa-edit"></i>
-                            </button>
-                            <button type="button" data-bs-toggle="tooltip" title="Remove" class="btn btn-link btn-danger">
-                              <i class="fa fa-times"></i>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                <!-- End Logo Header -->
             </div>
-          </div>
         </div>
+      
+        <div class="container">
+            <div class="page-inner">
+                {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="d-flex align-items-center">
+                                    <h4 class="card-title">Danh sách nông sản</h4>
+                                    <button class="btn btn-primary btn-round ms-auto" data-bs-toggle="modal" data-bs-target="#addRowModal">
+                                        <i class="fa fa-plus"></i> Thêm nông sản
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <!-- Modal -->
+                                <div class="modal fade" id="addRowModal" tabindex="-1" role="dialog" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header border-0">
+                                                <h5 class="modal-title">
+                                                    <span class="fw-mediumbold">Thêm</span>
+                                                    <span class="fw-light"> Nông sản </span>
+                                                </h5>
+                                            </div>
+                                            <form method="post" action="{% url 'nongsan' %}" enctype="multipart/form-data">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="insertNS" />
+                                                <div class="modal-body">
+                                                    <p class="small">Nhập thông tin để thêm nông sản mới</p>
+                                                    <div class="form-group form-group-default">
+                                                        <label>Tên nông sản</label>
+                                                        <input type="text" class="form-control" placeholder="Tên nông sản" name="ten" required />
+                                                    </div>
+                                                    <div class="form-group form-group-default">
+                                                        <label>Mô tả</label>
+                                                        <textarea class="form-control" placeholder="Mô tả" name="mota" required></textarea>
+                                                    </div>
+                                                    <div class="form-group form-group-default">
+                                                        <label>Giá</label>
+                                                        <input type="text" class="form-control" placeholder="Giá" name="gia" required />
+                                                    </div>
+                                                    <div class="form-group form-group-default">
+                                                        <label>Trọng lượng</label>
+                                                        <input type="text" class="form-control" placeholder="Trọng lượng" name="trongluong" required />
+                                                    </div>
+                                                    <div class="form-group form-group-default">
+                                                        <label>Mã danh mục</label>
+                                                        <select class="form-control" name="madanhmuc" required>
+                                                            {% for danhmuc in danhmucs %}
+                                                            <option value="{{ danhmuc.madanhmuc }}">{{ danhmuc.madanhmuc }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-group form-group-default">
+                                                        <label>Hình ảnh</label>
+                                                        <input type="file" class="form-control" name="image" />
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-0">
+                                                    <button type="submit" class="btn btn-primary">Thêm</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="table-responsive">
+                                    <table id="add-row" class="display table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Mã nông sản</th>
+                                                <th>Tên nông sản</th>
+                                                <th>Mô tả</th>
+                                                <th>Giá</th>
+                                                <th>Trọng lượng</th>
+                                                <th>Mã danh mục</th>
+                                                <th>Hình ảnh</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for nongsan in nongsans %}
+                                            <tr>
+                                                <td>{{ nongsan.idnongsan }}</td>
+                                                <td>{{ nongsan.ten }}</td>
+                                                <td>{{ nongsan.mota }}</td>
+                                                <td>{{ nongsan.gia }}</td>
+                                                <td>{{ nongsan.trongluong }}</td>
+                                                <td>{{ nongsan.madanhmuc.tendanhmuc }}</td> <!-- Hiển thị tên danh mục -->
+                                                <td><img src="{{ nongsan.image.url }}" alt="{{ nongsan.ten }}" height="50"></td>
+                                                <td>
+                                                    <div class="form-button-action">
+                                                        <form action="{% url 'nongsan_detail' nongsan.idnongsan %}" method="get" style="display:inline;">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="action" value="deleteNS" />
+                                                            <button type="submit" class="btn btn-link btn-danger" data-bs-toggle="tooltip" title="Xóa">
+                                                                <i class="fa fa-times"></i>
+                                                            </button>
+                                                        </form>
+                                                        <button type="button" title="Sửa thông tin" class="btn btn-link btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#editNongsan{{ nongsan.idnongsan }}">
+                                                            <i class="fa fa-edit"></i>
+                                                        </button>
+                                                        <div class="modal fade" id="editNongsan{{ nongsan.idnongsan }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                                            <div class="modal-dialog" role="document">
+                                                                <div class="modal-content">
+                                                                    <div class="modal-header border-0">
+                                                                        <h5 class="modal-title">
+                                                                            <span class="fw-mediumbold">Chỉnh sửa</span>
+                                                                            <span class="fw-light">Nông sản</span>
+                                                                        </h5>
+                                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                            <span aria-hidden="true">&times;</span>
+                                                                        </button>
+                                                                    </div>
+                                                                    <form method="post" action="{% url 'nongsan_detail' nongsan.idnongsan %}" enctype="multipart/form-data">
+                                                                      {% csrf_token %}
+                                                                      <input type="hidden" name="action" value="editNS" />
+                                                                      <div class="modal-body">
+                                                                          <p class="small">Chỉnh sửa thông tin nông sản</p>
+                                                                          <div class="row">
+                                                                              <div class="col-sm-12">
+                                                                                  <div class="form-group form-group-default">
+                                                                                      <label>Tên nông sản</label>
+                                                                                      <input type="text" class="form-control" name="ten" value="{{ nongsan.ten }}" />
+                                                                                  </div>
+                                                                                  <div class="form-group form-group-default">
+                                                                                      <label>Mô tả</label>
+                                                                                      <textarea class="form-control" name="mota">{{ nongsan.mota }}</textarea>
+                                                                                  </div>
+                                                                                  <div class="form-group form-group-default">
+                                                                                      <label>Giá</label>
+                                                                                      <input type="text" class="form-control" name="gia" value="{{ nongsan.gia }}" />
+                                                                                  </div>
+                                                                                  <div class="form-group form-group-default">
+                                                                                      <label>Trọng lượng</label>
+                                                                                      <input type="text" class="form-control" name="trongluong" value="{{ nongsan.trongluong }}" />
+                                                                                  </div>
+                                                                                  <div class="form-group form-group-default">
+                                                                                      <label>Mã danh mục</label>
+                                                                                      <select class="form-control" name="madanhmuc">
+                                                                                          {% for danhmuc in danhmucs %}
+                                                                                          <option value="{{ danhmuc.madanhmuc }}" {% if nongsan.madanhmuc.madanhmuc == danhmuc.madanhmuc %}selected{% endif %}>
+                                                                                              {{ danhmuc.madanhmuc }}
+                                                                                          </option>
+                                                                                          {% endfor %}
+                                                                                      </select>
+                                                                                  </div>
+                                                                                  <div class="form-group form-group-default">
+                                                                                      <label>Hình ảnh</label>
+                                                                                      <input type="file" class="form-control" name="image" />
+                                                                                      {% if nongsan.image %}
+                                                                                      <img src="{{ nongsan.image.url }}" alt="{{ nongsan.ten }}" height="50">
+                                                                                      {% endif %}
+                                                                                  </div>
+                                                                              </div>
+                                                                          </div>
+                                                                      </div>
+                                                                      <div class="modal-footer border-0">
+                                                                          <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                                                                      </div>
+                                                                  </form>
+                                                              </div>
+                                                          </div>
+                                                      </div>
+                                                  </div>
+                                              </td>
+                                          </tr>
+                                          {% empty %}
+                                          <tr>
+                                              <td colspan="8">Không có nông sản nào.</td>
+                                          </tr>
+                                          {% endfor %}
+                                      </tbody>
+                                  </table>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          {% include 'admin/footer.html' %}
       </div>
-    </div>
-    {% include 'admin/footer.html' %}
   </div>
 </div>
 
-<!-- JavaScript to handle form submission -->
-<script>
-  document.getElementById('addRowButton').addEventListener('click', function() {
-    var maNongSan = document.getElementById('addMaNongSan').value;
-    var tenNongSan = document.getElementById('addTenNongSan').value;
-    var moTa = document.getElementById('addMoTa').value;
-    var gia = document.getElementById('addGia').value;
-    var trongLuong = document.getElementById('addTrongLuong').value;
-    var maDanhMuc = document.getElementById('addMaDanhMuc').value;
-    var hinhAnh = document.getElementById('addHinhAnh').files[0].name;
-
-    var table = document.getElementById('add-row').getElementsByTagName('tbody')[0];
-    var newRow = table.insertRow();
-
-    var cell1 = newRow.insertCell(0);
-    var cell2 = newRow.insertCell(1);
-    var cell3 = newRow.insertCell(2);
-    var cell4 = newRow.insertCell(3);
-    var cell5 = newRow.insertCell(4);
-    var cell6 = newRow.insertCell(5);
-    var cell7 = newRow.insertCell(6);
-    var cell8 = newRow.insertCell(7);
-
-    cell1.innerHTML = maNongSan;
-    cell2.innerHTML = tenNongSan;
-    cell3.innerHTML = moTa;
-    cell4.innerHTML = gia;
-    cell5.innerHTML = trongLuong;
-    cell6.innerHTML = maDanhMuc;
-    cell7.innerHTML = `<img src="path/to/${hinhAnh}" alt="image" height="50"/>`;
-    cell8.innerHTML = `
-      <div class="form-button-action">
-        <button type="button" data-bs-toggle="tooltip" title="Edit Task" class="btn btn-link btn-primary btn-lg">
-          <i class="fa fa-edit"></i>
-        </button>
-        <button type="button" data-bs-toggle="tooltip" title="Remove" class="btn btn-link btn-danger">
-          <i class="fa fa-times"></i>
-        </button>
-      </div>
-    `;
-
-    // Close the modal
-    $('#addRowModal').modal('hide');
-  });
-</script>
-
+<!-- JS Files -->
+<script src="{% static 'admin/assets/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'admin/assets/js/Plugins/init-scripts.js' %}"></script>
+<script src="{% static 'admin/assets/js/plugins/choices.min.js' %}"></script>
+<script src="{% static 'admin/assets/js/plugins/croppie.min.js' %}"></script>
+<script src="{% static 'admin/assets/js/plugins/datatables.min.js' %}"></script>
+<script src="{% static 'admin/assets/js/plugins/fullcalendar.min.js' %}"></script>
+<script src="{% static 'admin/assets/js/plugins/moment.min.js' %}"></script>
+<script src="{% static 'admin/assets/js/plugins/progressbar.min.js' %}"></script>
+<script src="{% static 'admin/assets/js/plugins/select2.min.js' %}"></script>
+<script src="{% static 'admin/assets/js/plugins/sweetalert2.min.js' %}"></script>
+<script src="{% static 'admin/assets/js/plugins/tooltip.min.js' %}"></script>
+<script src="{% static 'admin/assets/js/kaiadmin.min.js' %}"></script>
+</body>
+</html>
