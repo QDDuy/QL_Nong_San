@@ -143,6 +143,9 @@ def contact(request):
     return render(request, 'user/contact.html', context)
 
 def nhanvien(request, manhanvien=None):
+    if request.session.get('user_role') != 'admin':
+        return redirect('/login/')  # Chuyển hướng đến trang đăng nhập nếu không phải admin
+
     if request.method == 'GET':
         url = request.GET.get('url')
         if url == "deleteNV" and manhanvien:
@@ -345,6 +348,7 @@ def login(request):
             user = Taikhoan.objects.get(username=username)
             if check_password(password, user.password):  # Check password using Django's check_password
                 request.session['checklogin'] = user.idtaikhoan
+                request.session['user_role'] = user.role
                 print(f"User ID from Taikhoan: {user.idtaikhoan}")
                 
                 try:
@@ -560,6 +564,8 @@ def order_history(request):
 
 
 def manage(request):
+    if request.session.get('user_role') != 'admin':
+        return redirect('/login/') 
     context = {}
     return render(request, 'user/login.html', context)
 
@@ -573,6 +579,8 @@ def logout(request):
 
 
 def kho(request, idkho=None):
+    if request.session.get('user_role') != 'admin':
+        return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('url')
         if url == "deletekho" and idkho:
@@ -617,6 +625,8 @@ def kho(request, idkho=None):
                 return redirect('kho')
 
 def nongsan(request, IdNongSan=None):
+    if request.session.get('user_role') != 'admin':
+        return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('action')
         if url == "deleteNS" and IdNongSan:
@@ -680,6 +690,8 @@ def nongsan(request, IdNongSan=None):
 
 
 def order(request, madonhang=None):
+    if request.session.get('user_role') != 'admin':
+        return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('action')
         if url == "deleteDH" and madonhang:
@@ -749,6 +761,8 @@ def order(request, madonhang=None):
 
 
 def donhangdetail(request, ma_donhang_detail=None):
+    if request.session.get('user_role') != 'admin':
+        return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('action')
         if url == "deleteDHDT" and ma_donhang_detail:
@@ -817,6 +831,8 @@ def donhangdetail(request, ma_donhang_detail=None):
 
 
 def giamgia(request, magiamgia=None):
+    if request.session.get('user_role') != 'admin':
+        return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('action')
         if url == "deleteGG" and magiamgia:
@@ -885,6 +901,8 @@ def giamgia(request, magiamgia=None):
 
 
 def tonkho(request, idtonkho=None):
+    if request.session.get('user_role') != 'admin':
+        return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('url')
         if url == "deleteTK" and idtonkho:
@@ -981,6 +999,8 @@ def tonkho(request, idtonkho=None):
     return redirect('tonkho')
 
 def nhacungcap(request, manhacungcap=None):
+    if request.session.get('user_role') != 'admin':
+        return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('url')
         if url == "deleteNCC" and manhacungcap:
@@ -1051,6 +1071,8 @@ def nhacungcap(request, manhacungcap=None):
 
 
 def ordernhacungcap(request, idorder=None):
+    if request.session.get('user_role') != 'admin':
+        return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('url')
         if url == "deleteOD" and idorder:
@@ -1128,6 +1150,8 @@ def ordernhacungcap(request, idorder=None):
     return redirect('ordernhacungcap')
 
 def account(request, idtaikhoan=None):
+    if request.session.get('user_role') != 'admin':
+        return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('url')
         if url == "deleteAcc" and idtaikhoan:
@@ -1184,6 +1208,8 @@ def account(request, idtaikhoan=None):
 
 
 def nguoidung(request, manguoidung=None):
+    if request.session.get('user_role') != 'admin':
+        return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('url')
         if url == "deleteND" and manguoidung:
