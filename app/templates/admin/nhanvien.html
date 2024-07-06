@@ -100,7 +100,7 @@
                               <span class="fw-light"> Nhân viên </span>
                             </h5>
                           </div>
-                          <form method="post" action="{% url 'nhanvien' %}">
+                          <form method="post" action="{% url 'nhanvien' %}" enctype="multipart/form-data">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="insertNV" />
                             <div class="modal-body">
@@ -171,7 +171,7 @@
                             <td>{{ nhanvien.luong }}</td>
                             <td>{{ nhanvien.calamviec }}</td>
                             <td>{{ nhanvien.idtaikhoan.idtaikhoan }}</td>
-                            <td><img src="{% static 'admin/img/nongsan/'%}{{ nhanvien.image }}" class="img-thumbnail" width="50" height="50"></td>
+                            <td><img src="" class="img-thumbnail" width="50" height="50"></td>
                             <td>
                               <div class="form-button-action">
                                 <form action="{% url 'nhanvien_detail' nhanvien.manhanvien %}" method="get" style="display:inline;">
@@ -195,7 +195,7 @@
                                           <span aria-hidden="true">&times;</span>
                                         </button>
                                       </div>
-                                      <form method="post" action="{% url 'nhanvien_detail' nhanvien.manhanvien %}">
+                                      <form method="post" action="{% url 'nhanvien_detail' nhanvien.manhanvien %}" enctype="multipart/form-data">
                                         {% csrf_token %}
                                         <input type="hidden" name="action" value="editNV" />
                                         <div class="modal-body">
@@ -226,12 +226,16 @@
                                                         </select>
                                                     </div>
                                                     <div class="form-group form-group-default">
-                                                        <label>Id tài khoản</label>
-                                                        <input type="text" class="form-control" name="accountId" value="{{ nhanvien.idtaikhoan.idtaikhoan }}" />
-                                                    </div>
+                                                      <label>Id tài khoản</label>
+                                                      <select class="form-control" name="accountId">
+                                                          {% for taikhoan in taikhoans %}
+                                                              <option value="{{ taikhoan.idtaikhoan }}" {% if user.idtaikhoan.idtaikhoan == taikhoan.idtaikhoan %}selected{% endif %}>{{ taikhoan.idtaikhoan }}</option>
+                                                          {% endfor %}
+                                                      </select>
+                                                  </div>
                                                     <div class="form-group form-group-default">
                                                         <label>Ảnh</label>
-                                                        <input type="text" class="form-control" name="Image" value="{{ nhanvien.image }}" />
+                                                        <input type="file" class="form-control" name="Image" value="{{ nhanvien.image }}" />
                                                     </div>
                                                 </div>
                                             </div>

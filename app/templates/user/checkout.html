@@ -115,52 +115,67 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  {%if cart_items%}
-                   {% for item in cart_items%}
-                  <th scope="row">
-                    <div class="d-flex align-items-center mt-2">
-                      <img
-                        src="{{item.nongsan.image.url}}"
-                        class="img-fluid rounded-circle"
-                        style="width: 90px; height: 90px"
-                        alt=""
-                      />
-                    </div>
-                  </th>
-                  <td class="py-5">{{item.nongsan.ten}}</td>
-                  <td class="py-5">{{item.nongsan.gia|floatformat:0 }} VNĐ</td>
-                  <td class="py-5">{{item.quantity}}</td>
-                  <td class="py-5">{{item.total_price|floatformat:0 }} VNĐ</td>
-                </tr>
-              {%endfor %}
-               {%endif%}
-               
+                {% if cart_items %}
+                  {% for item in cart_items %}
+                    <tr>
+                      <th scope="row">
+                        <div class="d-flex align-items-center mt-2">
+                          <img
+                            src="{{ item.nongsan.image.url }}"
+                            class="img-fluid rounded-circle"
+                            style="width: 90px; height: 90px"
+                            alt="{{ item.nongsan.ten }}"
+                          />
+                        </div>
+                      </th>
+                      <td class="py-5">{{ item.nongsan.ten }}</td>
+                      <td class="py-5">
+                        {% if item.giamgia %}
+                          <p class="mb-0"><del>{{ item.nongsan.gia|floatformat:0 }} VNĐ</del></p>
+                          <p class="mb-0 text-danger">{{ item.gia_da_giam|floatformat:0 }} VNĐ</p>
+                        {% else %}
+                          <p class="mb-0">{{ item.nongsan.gia }} VNĐ</p>
+                        {% endif %}
+                      </td>
+                      <td class="py-5">{{ item.quantity }}</td>
+                      <td class="py-5">{{ item.total_price|floatformat:0 }} VNĐ</td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="5" class="text-center py-5">Giỏ hàng của bạn đang trống</td>
+                  </tr>
+                {% endif %}
+                
                 <tr>
                   <th scope="row"></th>
                   <td class="py-5">
-                    <p class="mb-0 text-dark text-uppercase py-3">TOTAL</p>
+                    <p class="mb-0 text-dark text-uppercase py-3">TỔNG CỘNG</p>
                   </td>
                   <td class="py-5"></td>
                   <td class="py-5"></td>
                   <td class="py-5">
                     <div class="py-3 border-bottom border-top">
-                      <p class="mb-0 text-dark">{{total_price|floatformat:0}} VNĐ</p>
+                      <p class="mb-0 text-dark">{{ total_price|floatformat:0 }} VNĐ</p>
                     </div>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <div class="row g-4 text-center align-items-center justify-content-center pt-4" >
-            <button
-              type="submit"
-              class="btn border-secondary py-3 px-4 text-uppercase w-100 text-primary"
-            >
-              Place Order
-            </button>
+          <div class="row g-4 text-center align-items-center justify-content-center pt-4">
+            <form method="post" action="{% url 'checkout' %}">
+              {% csrf_token %}
+              <button
+                type="submit"
+                class="btn border-secondary py-3 px-4 text-uppercase w-100 text-primary"
+              >
+                Place Order
+              </button>
+            </form>
           </div>
         </div>
+        
       </div>
     </form>
   </div>

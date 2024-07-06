@@ -88,5 +88,17 @@ class="navbar navbar-header navbar-header-transparent navbar-expand-lg border-bo
 </div>
 </nav>
 <!-- End Navbar -->
+<script>
+    // Tự động ẩn thông báo sau 3 giây
+    setTimeout(function() {
+        var alerts = document.querySelectorAll('.alert-slide');
+        alerts.forEach(function(alert) {
+            alert.style.opacity = '0';
+            setTimeout(function() {
+                alert.style.display = 'none';
+            }, 500); // Đảm bảo rằng thời gian này khớp với transition trong CSS
+        });
+    }, 3000); // 3 giây
+    </script>
 </body>
 </html>

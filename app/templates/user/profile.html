@@ -1,4 +1,5 @@
 {% include "user/header.html" %}
+  
 
 <section class="pt-5"style="background-color: #eee;">
     <div class="container py-5 ">
@@ -14,6 +15,15 @@
       </div>
   
       <div class="row">
+        {% if messages %}
+<div class="ml-4">
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-slide" role="alert">
+            {{ message }}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
         <div class="col-lg-4">
           <form method="post" enctype="multipart/form-data" action="?action=changeAvatar">
             {% csrf_token %}
@@ -123,4 +133,16 @@
       </div>
     </div>
   </section>
+  <script>
+    // Tự động ẩn thông báo sau 3 giây
+    setTimeout(function() {
+        var alerts = document.querySelectorAll('.alert-slide');
+        alerts.forEach(function(alert) {
+            alert.style.opacity = '0';
+            setTimeout(function() {
+                alert.style.display = 'none';
+            }, 500); // Đảm bảo rằng thời gian này khớp với transition trong CSS
+        });
+    }, 3000); // 3 giây
+    </script>
 {% include "user/footer.html"%}

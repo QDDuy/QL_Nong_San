@@ -166,7 +166,11 @@
                             <td>{{ user.phone }}</td>
                             <td>{{ user.diachi }}</td>
                             <td>{{ user.idtaikhoan.idtaikhoan }}</td>
-                            <td><img src="{% static 'admin/img/nongsan/'%}{{ user.image }}" class="img-thumbnail" width="50" height="50"></td>
+                            <td>    {% if user.image %}
+        <img src="{{ user.image.url }}" class="img-thumbnail" width="50" height="50">
+    {% else %}
+        <img src="path/to/default/image.jpg" class="img-thumbnail" width="50" height="50">
+    {% endif %}</td>
                             <td>
                               <div class="form-button-action">
                                 <form action="{% url 'nguoidung_detail' user.manguoidung %}" method="get" enctype="multipart/form-data" style="display:inline;">
@@ -215,9 +219,13 @@
                                                     </div>
                                                  
                                                     <div class="form-group form-group-default">
-                                                        <label>Id tài khoản</label>
-                                                        <input type="text" class="form-control" name="accountId" value="{{ user.idtaikhoan.idtaikhoan }}" />
-                                                    </div>
+                                                      <label>Id tài khoản</label>
+                                                      <select class="form-control" name="accountId">
+                                                          {% for taikhoan in taikhoans %}
+                                                              <option value="{{ taikhoan.idtaikhoan }}" {% if user.idtaikhoan.idtaikhoan == taikhoan.idtaikhoan %}selected{% endif %}>{{ taikhoan.idtaikhoan }}</option>
+                                                          {% endfor %}
+                                                      </select>
+                                                  </div>
                                                     <div class="form-group form-group-default">
                                                         <label>Ảnh</label>
                                                         <input type="file" class="form-control" name="Image" value="{{ user.image }}" />

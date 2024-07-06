@@ -166,7 +166,7 @@ class Nguoidung(models.Model):
     phone = models.CharField(db_column='Phone', max_length=20, blank=True, null=True)  # Field name made lowercase.
     email = models.CharField(db_column='Email', max_length=100, blank=True, null=True)  # Field name made lowercase.
     idtaikhoan = models.ForeignKey('Taikhoan', models.DO_NOTHING, db_column='IdTaiKhoan', blank=True, null=True)  # Field name made lowercase.
-    image=models.ImageField(upload_to='nongsan/',null=True, blank=True)
+    image=models.ImageField(upload_to='',null=True, blank=True)
     class Meta:
         managed = False
         db_table = 'nguoidung'
@@ -192,7 +192,7 @@ class Nhanvien(models.Model):
     luong = models.DecimalField(db_column='Luong', max_digits=12, decimal_places=2, blank=True, null=True)  # Field name made lowercase.
     calamviec = models.CharField(db_column='CaLamViec', max_length=50, blank=True, null=True)  # Field name made lowercase.
     idtaikhoan = models.ForeignKey('Taikhoan', models.DO_NOTHING, db_column='IdTaiKhoan', blank=True, null=True)  # Field name made lowercase.
-    image=models.ImageField(null=True, blank=True)
+    image=models.ImageField(upload_to='nongsan/',null=True, blank=True)
     class Meta:
         managed = False
         db_table = 'nhanvien'
@@ -230,11 +230,12 @@ class Cart(models.Model):
     class Meta:
         managed = False
         db_table = 'cart'
+
 class Ordernhacungcap(models.Model):
     idorder = models.CharField(db_column='IdOrder', primary_key=True, max_length=50)  # Field name made lowercase.
     nhacungcapid = models.ForeignKey(Nhacungcap, models.DO_NOTHING, db_column='NhaCungCapId', blank=True, null=True)  # Field name made lowercase.
     ngaygiaodich = models.DateField(db_column='NgayGiaoDich', blank=True, null=True)  # Field name made lowercase.
-    loaigiaodich = models.CharField(db_column='LoaiGiaoDich', max_length=8, blank=True, null=True)  # Field name made lowercase.
+    loaigiaodich = models.CharField(db_column='LoaiGiaoDich', max_length=255, blank=True, null=True)  # Field name made lowercase.
     soluong = models.IntegerField(db_column='SoLuong', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:

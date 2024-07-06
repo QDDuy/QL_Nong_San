@@ -39,7 +39,7 @@
 
 <!-- Single Page Header start -->
 <div class="container-fluid page-header py-5">
-  <h1 class="text-center text-white display-6">Cart</h1>
+  <h1 class="text-center text-white display-6">Cart History</h1>
   <ol class="breadcrumb justify-content-center mb-0">
     <li class="breadcrumb-item"><a href="/">Home</a></li>
     <li class="breadcrumb-item active text-white">History order</li>
@@ -54,12 +54,12 @@
       <table class="table">
         <thead>
           <tr>
-            <th scope="col">Products</th>
-            <th scope="col">Name</th>
-            <th scope="col">Price</th>
-            <th scope="col">Quantity</th>
-            <th scope="col">Total</th>
-            <th scope="col">Handle</th>
+            <th scope="col">Mã đơn hàng</th>
+            <th scope="col">Thành tiền</th>
+            <th scope="col">Ngày mua</th>
+            <th scope="col">Trạng thái</th>
+            <th scope="col">Sản phẩm</th>
+           
           </tr>
         </thead>
         <tbody>
@@ -76,7 +76,7 @@
                     <li>
                       <strong>Product:</strong> {{ detail.idnongsan.ten }} <br>
                       <strong>Quantity:</strong> {{ detail.quantity }} <br>
-                      <strong>Price:</strong> {{ detail.idnongsan.gia }} <br>
+                      <strong>Price:</strong> {{ detail.gia }} <br>
                     </li>
                   {% endfor %}
                 </ul>

@@ -6,10 +6,8 @@
   <div class="container py-5">
     <div class="row g-5 align-items-center">
       <div class="col-md-12 col-lg-7">
-        <h4 class="mb-3 text-secondary">100% Organic Foods</h4>
-        <h1 class="mb-5 display-3 text-primary">
-          Organic Veggies & Fruits Foods
-        </h1>
+        <h1 class="mb-3 text-secondary">100% Sản phẩm tươi, sạch</h1>
+      
         <div class="position-relative mx-auto">
           <form method="get" action="/shop/">
           <input
@@ -23,7 +21,7 @@
             class="btn btn-primary border-2 border-secondary py-3 px-4 position-absolute rounded-pill text-white h-100"
             style="top: 0; right: 25%"
           >
-            Submit Now
+           Tìm kiếm
           </button>
           </form>
         </div>
@@ -36,16 +34,13 @@
         >
           <div class="carousel-inner" role="listbox">
             <div class="carousel-item active rounded">
-              <img src="{%static "img/hero-img-1.png"%}" class="img-fluid w-100
+              <img src="{%static "user/img/hero-img-1.png"%}" class="img-fluid w-100
               h-100 bg-secondary rounded" alt="First slide" />
-              <a href="#" class="btn px-4 py-2 text-white rounded">Fruites</a>
             </div>
             <div class="carousel-item rounded">
-              <img src="{%static "img/hero-img-2.jpg"%}" class="img-fluid w-100
+              <img src="{%static "user/img/hero-img-2.jpg"%}" class="img-fluid w-100
               h-100 rounded" alt="Second slide" />
-              <a href="#" class="btn px-4 py-2 text-white rounded"
-                >Vesitables</a
-              >
+              
             </div>
           </div>
           <button
@@ -115,36 +110,44 @@
           <div class="row g-4">
             <div class="col-lg-12">
               <div class="row g-4">
-                {%for product in products  %}
+                {% for product in products %}
                 <div class="col-md-6 col-lg-4 col-xl-3">
-                  <div class="rounded position-relative fruite-item">
-                    <div class="fruite-img">
-                      <img src="{{ product.image.url }}"
-                      class="img-fluid w-100 rounded-top" alt="" />
+                    <div class="rounded position-relative fruite-item">
+                        <div class="fruite-img">
+                            <img src="{{ product.image.url }}" class="img-fluid w-100 rounded-top" alt="" />
+                        </div>
+                        <div class="text-white bg-secondary px-3 py-1 rounded position-absolute" style="top: 10px; left: 10px">
+                            {{ product.madanhmuc.tendanhmuc }}
+                        </div>
+                        <div class="p-4 border border-secondary border-top-0 rounded-bottom">
+                            <h4><a href="/shop-detail/{{ product.idnongsan }}">{{ product.ten }}</a></h4>
+                            <p>{{ product.mota }}</p>
+                            <div class="d-flex justify-content-between flex-lg-wrap">
+                                {% for giamgia in result %}
+                                {% if giamgia.idnongsan == product.idnongsan %}
+                                {% if giamgia.gia_da_giam < product.gia %}
+                                <p class="text-dark fs-5 fw-bold mb-0">
+                                    <del>{{ product.gia|floatformat:0 }} / kg</del>
+                                </p>
+                                <p class="text-danger fs-5 fw-bold mb-0">
+                                    {{ giamgia.gia_da_giam|floatformat:0 }} / kg
+                                </p>
+                                {% else %}
+                                <p class="text-dark fs-5 fw-bold mb-0">
+                                    {{ product.gia|floatformat:0 }} / kg
+                                </p>
+                                {% endif %}
+                                {% endif %}
+                                {% endfor %}
+                                <a href="{% url 'add_to_cart' product.idnongsan %}" class="btn border border-secondary rounded-pill px-3 text-primary">
+                                    <i class="fa fa-shopping-bag me-2 text-primary"></i> Add to cart
+                                </a>
+                            </div>
+                        </div>
                     </div>
-                    <div
-                      class="text-white bg-secondary px-3 py-1 rounded position-absolute"
-                      style="top: 10px; left: 10px"
-                    >
-                      {{product.madanhmuc.tendanhmuc}}
-                    </div>
-                    <div
-                      class="p-4 border border-secondary border-top-0 rounded-bottom"
-                    >
-                      <h4><a href="/shop-detail/{{product.idnongsan}}"> {{product.ten}}</a></h4>
-                      <p>
-                       {{product.mota}}
-                      </p>
-                      <div class="d-flex justify-content-between flex-lg-wrap">
-                        <p class="text-dark fs-5 fw-bold mb-0">{{ product.gia|floatformat:"0" }} ₫/kg</p>
-                        <a href="{% url 'add_to_cart' product.idnongsan %}" class="btn border border-secondary rounded-pill px-3 text-primary">
-                          <i class="fa fa-shopping-bag me-2 text-primary"></i> Add to cart
-                      </a>
-                      </div>
-                    </div>
-                  </div>
                 </div>
-                {%endfor%}
+                {% endfor %}
+                
               </div>
             </div>
           </div>
@@ -168,10 +171,25 @@
                           <h4><a href="/shop-detail/{{product.idnongsan}}">{{ product.ten }}</a></h4>
                           
                           <p>
-                            Lorem ipsum dolor sit amet consectetur adipisicing elit, sed do eiusmod tempor incididunt
+                           {{product.mota}}
                           </p>
                           <div class="d-flex justify-content-between flex-lg-wrap">
-                            <p class="text-dark fs-5 fw-bold mb-0">$4.99 / kg</p>
+                            {% for giamgia in result %}
+                            {% if giamgia.idnongsan == product.idnongsan %}
+                            {% if giamgia.gia_da_giam < product.gia %}
+                            <p class="text-dark fs-5 fw-bold mb-0">
+                                <del>{{ product.gia|floatformat:0 }} / kg</del>
+                            </p>
+                            <p class="text-danger fs-5 fw-bold mb-0">
+                                {{ giamgia.gia_da_giam|floatformat:0 }} / kg
+                            </p>
+                            {% else %}
+                            <p class="text-dark fs-5 fw-bold mb-0">
+                                {{ product.gia|floatformat:0 }} / kg
+                            </p>
+                            {% endif %}
+                            {% endif %}
+                            {% endfor %}
                             <a href="{% url 'add_to_cart' product.idnongsan %}" class="btn border border-secondary rounded-pill px-3 text-primary">
                               <i class="fa fa-shopping-bag me-2 text-primary"></i>
                               Add to cart
@@ -205,25 +223,37 @@
     
     </div>
     <div class="row g-4">
+      {% for product in best_selling_products %}
       <div class="col-lg-6 col-xl-4">
         <div class="p-4 rounded bg-light">
           <div class="row align-items-center">
             <div class="col-6">
-              <img src="{%static "img/best-product-1.jpg"%}" class="img-fluid
+              <img src="{{product.image.url}}" class="img-fluid
               rounded-circle w-100" alt="" />
             </div>
             <div class="col-6">
-              <a href="#" class="h5">Organic Tomato</a>
-              <div class="d-flex my-3">
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star"></i>
-              </div>
-              <h4 class="mb-3">3.12 $</h4>
+              <a href="/shop-detail/{{product.idnongsan}}" class="h5">{{product.ten}}</a>
+              <p>
+                {{product.mota}}
+              </p>
+              {% for giamgia in result %}
+              {% if giamgia.idnongsan == product.idnongsan %}
+              {% if giamgia.gia_da_giam < product.gia %}
+              <p class="text-dark fs-5 fw-bold mb-0">
+                  <del>{{ product.gia|floatformat:0 }} / kg</del>
+              </p>
+              <p class="text-danger fs-5 fw-bold mb-0">
+                  {{ giamgia.gia_da_giam|floatformat:0 }} / kg
+              </p>
+              {% else %}
+              <p class="text-dark fs-5 fw-bold mb-0">
+                  {{ product.gia|floatformat:0 }} / kg
+              </p>
+              {% endif %}
+              {% endif %}
+              {% endfor %}
               <a
-                href="#"
+                href="{% url 'add_to_cart' product.idnongsan %}"
                 class="btn border border-secondary rounded-pill px-3 text-primary"
                 ><i class="fa fa-shopping-bag me-2 text-primary"></i> Add to
                 cart</a
@@ -232,233 +262,7 @@
           </div>
         </div>
       </div>
-      <div class="col-lg-6 col-xl-4">
-        <div class="p-4 rounded bg-light">
-          <div class="row align-items-center">
-            <div class="col-6">
-              <img src="{%static "img/best-product-2.jpg"%}" class="img-fluid
-              rounded-circle w-100" alt="" />
-            </div>
-            <div class="col-6">
-              <a href="#" class="h5">Organic Tomato</a>
-              <div class="d-flex my-3">
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star"></i>
-              </div>
-              <h4 class="mb-3">3.12 $</h4>
-              <a
-                href="#"
-                class="btn border border-secondary rounded-pill px-3 text-primary"
-                ><i class="fa fa-shopping-bag me-2 text-primary"></i> Add to
-                cart</a
-              >
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-6 col-xl-4">
-        <div class="p-4 rounded bg-light">
-          <div class="row align-items-center">
-            <div class="col-6">
-              <img src="{%static "img/best-product-3.jpg"%}" class="img-fluid
-              rounded-circle w-100" alt="" />
-            </div>
-            <div class="col-6">
-              <a href="#" class="h5">Organic Tomato</a>
-              <div class="d-flex my-3">
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star"></i>
-              </div>
-              <h4 class="mb-3">3.12 $</h4>
-              <a
-                href="#"
-                class="btn border border-secondary rounded-pill px-3 text-primary"
-                ><i class="fa fa-shopping-bag me-2 text-primary"></i> Add to
-                cart</a
-              >
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-6 col-xl-4">
-        <div class="p-4 rounded bg-light">
-          <div class="row align-items-center">
-            <div class="col-6">
-              <img src="{%static "img/best-product-4.jpg"%}" class="img-fluid
-              rounded-circle w-100" alt="" />
-            </div>
-            <div class="col-6">
-              <a href="#" class="h5">Organic Tomato</a>
-              <div class="d-flex my-3">
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star"></i>
-              </div>
-              <h4 class="mb-3">3.12 $</h4>
-              <a
-                href="#"
-                class="btn border border-secondary rounded-pill px-3 text-primary"
-                ><i class="fa fa-shopping-bag me-2 text-primary"></i> Add to
-                cart</a
-              >
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-6 col-xl-4">
-        <div class="p-4 rounded bg-light">
-          <div class="row align-items-center">
-            <div class="col-6">
-              <img src="{%static "img/best-product-5.jpg"%}" class="img-fluid
-              rounded-circle w-100" alt="" />
-            </div>
-            <div class="col-6">
-              <a href="#" class="h5">Organic Tomato</a>
-              <div class="d-flex my-3">
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star"></i>
-              </div>
-              <h4 class="mb-3">3.12 $</h4>
-              <a
-                href="#"
-                class="btn border border-secondary rounded-pill px-3 text-primary"
-                ><i class="fa fa-shopping-bag me-2 text-primary"></i> Add to
-                cart</a
-              >
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-6 col-xl-4">
-        <div class="p-4 rounded bg-light">
-          <div class="row align-items-center">
-            <div class="col-6">
-              <img src="{%static "img/best-product-6.jpg"%}" class="img-fluid
-              rounded-circle w-100" alt="" />
-            </div>
-            <div class="col-6">
-              <a href="#" class="h5">Organic Tomato</a>
-              <div class="d-flex my-3">
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star text-primary"></i>
-                <i class="fas fa-star"></i>
-              </div>
-              <h4 class="mb-3">3.12 $</h4>
-              <a
-                href="#"
-                class="btn border border-secondary rounded-pill px-3 text-primary"
-                ><i class="fa fa-shopping-bag me-2 text-primary"></i> Add to
-                cart</a
-              >
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-6 col-xl-3">
-        <div class="text-center">
-          <img src="{%static "img/fruite-item-1.jpg"%}" class="img-fluid
-          rounded" alt="" />
-          <div class="py-4">
-            <a href="#" class="h5">Organic Tomato</a>
-            <div class="d-flex my-3 justify-content-center">
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star"></i>
-            </div>
-            <h4 class="mb-3">3.12 $</h4>
-            <a
-              href="#"
-              class="btn border border-secondary rounded-pill px-3 text-primary"
-              ><i class="fa fa-shopping-bag me-2 text-primary"></i> Add to
-              cart</a
-            >
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-6 col-xl-3">
-        <div class="text-center">
-          <img src="{%static "img/fruite-item-2.jpg"%}" class="img-fluid
-          rounded" alt="" />
-          <div class="py-4">
-            <a href="#" class="h5">Organic Tomato</a>
-            <div class="d-flex my-3 justify-content-center">
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star"></i>
-            </div>
-            <h4 class="mb-3">3.12 $</h4>
-            <a
-              href="#"
-              class="btn border border-secondary rounded-pill px-3 text-primary"
-              ><i class="fa fa-shopping-bag me-2 text-primary"></i> Add to
-              cart</a
-            >
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-6 col-xl-3">
-        <div class="text-center">
-          <img src="{%static "img/fruite-item-3.jpg"%}" class="img-fluid
-          rounded" alt="" />
-          <div class="py-4">
-            <a href="#" class="h5">Organic Tomato</a>
-            <div class="d-flex my-3 justify-content-center">
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star"></i>
-            </div>
-            <h4 class="mb-3">3.12 $</h4>
-            <a
-              href="#"
-              class="btn border border-secondary rounded-pill px-3 text-primary"
-              ><i class="fa fa-shopping-bag me-2 text-primary"></i> Add to
-              cart</a
-            >
-          </div>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-6 col-xl-3">
-        <div class="text-center">
-          <img src="{%static "img/fruite-item-4.jpg"%}" class="img-fluid
-          rounded" alt="" />
-          <div class="py-2">
-            <a href="#" class="h5">Organic Tomato</a>
-            <div class="d-flex my-3 justify-content-center">
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star text-primary"></i>
-              <i class="fas fa-star"></i>
-            </div>
-            <h4 class="mb-3">3.12 $</h4>
-            <a
-              href="#"
-              class="btn border border-secondary rounded-pill px-3 text-primary"
-              ><i class="fa fa-shopping-bag me-2 text-primary"></i> Add to
-              cart</a
-            >
-          </div>
-        </div>
-      </div>
+      {% endfor %}
     </div>
   </div>
 </div>

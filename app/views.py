@@ -9,18 +9,69 @@ from django.db import transaction
 from datetime import date
 import uuid
 from django.db.models import Count
-def home(request ):
-    
+from django.db.models import F, ExpressionWrapper, DecimalField, Value,Case,When,Sum,IntegerField
+from django.db.models.functions import Coalesce
+
+
+def home(request):
+    # Lấy tất cả sản phẩm kèm danh mục của chúng (sử dụng select_related để tối ưu hóa)
     products = Nongsan.objects.select_related('madanhmuc').all()
+
+    # Lấy danh sách tất cả sản phẩm (không cần select_related ở đây nếu chỉ cần thông tin từ bảng Nongsan)
     product_danhmuc = Nongsan.objects.all()
+
+    # Lấy tất cả danh mục
     categories = Danhmuc.objects.all()
-   
+
+    # Truy vấn sản phẩm bán chạy nhất từ các đơn hàng đã hoàn tất
+    best_selling_products = Nongsan.objects.annotate(
+        total_sold=Sum(
+            Case(
+                When(
+                    donhangdetail__ma_donhang__trangthai='Completed',
+                    then=F('donhangdetail__quantity')
+                ),
+                default=0,
+                output_field=IntegerField()
+            )
+        )
+    ).order_by('-total_sold')[:10]  # Lấy 10 sản phẩm bán chạy nhất
+
+    # Bộ lọc và áp dụng giảm giá nếu có
+    today = date.today()
+    result = Nongsan.objects.all().annotate(
+        gia_da_giam=Case(
+            When(
+                giamgia__ngaybatdau__lte=today,
+                giamgia__ngayketthuc__gte=today,
+                then=ExpressionWrapper(
+                    F('gia') * (1 - F('giamgia__phantramgiam') / 100),
+                    output_field=DecimalField(max_digits=15, decimal_places=2)
+                )
+            ),
+            default=F('gia'),
+            output_field=DecimalField(max_digits=15, decimal_places=2)
+        ),
+        giamgia_hieu_luc=Case(
+            When(
+                giamgia__ngaybatdau__lte=today,
+                giamgia__ngayketthuc__gte=today,
+                then=Value(True)
+            ),
+            default=Value(False),
+            output_field=IntegerField()
+        )
+    )
+
     context = {
         'products': products,
         'categories': categories,
-        'product_danhmuc': product_danhmuc
+        'product_danhmuc': product_danhmuc,
+        'best_selling_products': best_selling_products,
+        'result': result,
     }
     return render(request, 'user/index.html', context)
+
 
 
 def shop(request):
@@ -30,6 +81,7 @@ def shop(request):
 
     categories = Danhmuc.objects.all()
     categories = Danhmuc.objects.annotate(num_products=Count('nongsan'))
+    
     # Bộ lọc sản phẩm
     result = Nongsan.objects.all()
 
@@ -39,10 +91,36 @@ def shop(request):
     if category_id:
         result = result.filter(madanhmuc=category_id)
 
+    # Áp dụng giảm giá nếu có
+    today = date.today()
+    result = result.annotate(
+        gia_da_giam=Case(
+            When(
+                giamgia__ngaybatdau__lte=today,
+                giamgia__ngayketthuc__gte=today,
+                then=ExpressionWrapper(
+                    F('gia') * (1 - Coalesce(F('giamgia__phantramgiam'), Value(0)) / 100),
+                    output_field=DecimalField(max_digits=15, decimal_places=2)
+                )
+            ),
+            default=F('gia'),
+            output_field=DecimalField(max_digits=15, decimal_places=2)
+        ),
+        giamgia_hieu_luc=Case(
+            When(
+                giamgia__ngaybatdau__lte=today,
+                giamgia__ngayketthuc__gte=today,
+                then=Value(True)
+            ),
+            default=Value(False),
+            output_field=DecimalField()
+        )
+    )
+
     if sort_by_price == 'ascending':
-        result = result.order_by('gia')  # Sắp xếp từ thấp đến cao theo giá
+        result = result.order_by('gia_da_giam')  # Sắp xếp từ thấp đến cao theo giá đã giảm
     elif sort_by_price == 'descending':
-        result = result.order_by('-gia')  # Sắp xếp từ cao đến thấp theo giá
+        result = result.order_by('-gia_da_giam')  # Sắp xếp từ cao đến thấp theo giá đã giảm
 
     context = {
         'query': query,
@@ -70,15 +148,38 @@ def cart(request):
     user_id = request.session.get('manguoidung')
 
     if user_id:
-        cart_items = Cart.objects.filter(user_id=user_id)
+        cart_items = Cart.objects.filter(user_id=user_id).select_related('nongsan')
         
         if not cart_items.exists():
             return render(request, 'user/cart.html', {'cart_items': [], 'total_quantity': 0, 'total_price': 0})
 
-        total_quantity = sum(item.quantity for item in cart_items)
-        total_price = sum(item.nongsan.gia * item.quantity for item in cart_items)
+        today = date.today()
+
+        total_quantity = 0
+        total_price = 0
+
         for item in cart_items:
-            item.total_price = item.nongsan.gia * item.quantity
+            nongsan = item.nongsan
+            gia_da_giam = Nongsan.objects.annotate(
+                gia_da_giam=Case(
+                    When(
+                        giamgia__ngaybatdau__lte=today,
+                        giamgia__ngayketthuc__gte=today,
+                        then=ExpressionWrapper(
+                            F('gia') * (1 - F('giamgia__phantramgiam') / 100),
+                            output_field=DecimalField(max_digits=15, decimal_places=2)
+                        )
+                    ),
+                    default=F('gia'),
+                    output_field=DecimalField(max_digits=15, decimal_places=2)
+                )
+            ).get(idnongsan=nongsan.idnongsan).gia_da_giam
+
+            item.price = gia_da_giam
+            item.total_price = gia_da_giam * item.quantity
+            total_quantity += item.quantity
+            total_price += item.total_price
+
         context = {
             'cart_items': cart_items,
             'total_quantity': total_quantity,
@@ -87,7 +188,7 @@ def cart(request):
 
         return render(request, 'user/cart.html', context)
     else:
-        return redirect('login')  # Điều hướng đến trang đăng nhập nếu không có ID người dùng trong session
+        return redirect('login') # Điều hướng đến trang đăng nhập nếu không có ID người dùng trong session
 
 
     
@@ -106,7 +207,14 @@ def checkout(request):
             return redirect('cart')
 
         if request.method == 'POST':
-            total_price = sum(item.nongsan.gia * item.quantity for item in cart_items)
+            total_price = 0
+            for item in cart_items:
+                giamgia = Giamgia.objects.filter(idnongsan=item.nongsan).first()
+                if giamgia and giamgia.ngayketthuc and giamgia.ngaybatdau <= date.today() <= giamgia.ngayketthuc:
+                    gia_da_giam = item.nongsan.gia * (1 - giamgia.phantramgiam / 100)
+                    total_price += gia_da_giam * item.quantity
+                else:
+                    total_price += item.nongsan.gia * item.quantity
 
             try:
                 with transaction.atomic():
@@ -115,7 +223,7 @@ def checkout(request):
                         manguoidung=user,
                         tonggia=total_price,
                         ngaydat=date.today(),
-                        trangthai='Pending',  
+                        trangthai='Pending',
                     )
 
                     for item in cart_items:
@@ -132,14 +240,23 @@ def checkout(request):
                 return redirect('home')
 
             except Exception as e:
-                print(f"Lỗi trong quá trình thanh toán: {str(e)}")  # In lỗi ra console
+                print(f"Lỗi trong quá trình thanh toán: {str(e)}")
                 messages.error(request, f'Đã xảy ra lỗi trong quá trình thanh toán. Vui lòng thử lại sau. Chi tiết lỗi: {str(e)}')
                 return redirect('checkout')
+
+        total_price = 0
         for item in cart_items:
-            item.total_price = item.nongsan.gia * item.quantity
+            giamgia = Giamgia.objects.filter(idnongsan=item.nongsan).first()
+            if giamgia and giamgia.ngayketthuc and giamgia.ngaybatdau <= date.today() <= giamgia.ngayketthuc:
+                gia_da_giam = item.nongsan.gia * (1 - giamgia.phantramgiam / 100)
+                item.total_price = gia_da_giam * item.quantity
+            else:
+                item.total_price = item.nongsan.gia * item.quantity
+            total_price += item.total_price
+
         context = {
             'cart_items': cart_items,
-            'total_price': sum(item.nongsan.gia * item.quantity for item in cart_items),
+            'total_price': total_price,
         }
         return render(request, 'user/checkout.html', context)
 
@@ -252,15 +369,36 @@ def register(request):
     return render(request, 'user/register.html')
 
 
+
 def add_to_cart(request, product_id):
     user_id = request.session.get('manguoidung')
     
     if user_id:
         user = get_object_or_404(Nguoidung, manguoidung=user_id)
     else:
-        return redirect('login')  
+        return redirect('login')
+
     nongsan = get_object_or_404(Nongsan, idnongsan=product_id)
+
+    # Tính giá đã giảm (nếu có)
+    today = date.today()
+    gia_da_giam = Nongsan.objects.annotate(
+        gia_da_giam=Case(
+            When(
+                giamgia__ngaybatdau__lte=today,
+                giamgia__ngayketthuc__gte=today,
+                then=ExpressionWrapper(
+                    F('gia') * (1 - F('giamgia__phantramgiam') / 100),
+                    output_field=DecimalField(max_digits=15, decimal_places=2)
+                )
+            ),
+            default=F('gia'),
+            output_field=DecimalField(max_digits=15, decimal_places=2)
+        )
+    ).get(idnongsan=product_id).gia_da_giam
+
     quantity = 1
+    
     try:
         cart_item = Cart.objects.get(user=user, nongsan=nongsan)
         cart_item.quantity += quantity
@@ -274,6 +412,9 @@ def add_to_cart(request, product_id):
             quantity=quantity
         )
 
+    # Thêm giá đã giảm vào session hoặc context để sử dụng sau này
+    request.session['gia_da_giam'] = float(gia_da_giam)
+    
     return redirect('cart')
 
     
@@ -288,17 +429,18 @@ def profile(request):
         address=request.POST.get('address')
         try:
             nguoidung = Nguoidung.objects.get(manguoidung=id_user)
-            nguoidung.fullname = fullname
+            nguoidung.hovaten = fullname
             nguoidung.email = email
             nguoidung.phone = phone
-            nguoidung.address = address
+            nguoidung.diachi = address
             nguoidung.save()
+          
+            messages.success(request, 'Thông tin người dùng đã được cập nhật thành công.')
             request.session['khachHang_name'] = fullname
             request.session['khachHang_email'] = email
             request.session['khachHang_phone'] = phone
             request.session['khachHang_address'] = address
-            messages.success(request, 'Thông tin người dùng đã được cập nhật thành công.')
-            return render(request, 'user/profile.html')  # Redirect về trang profile sau khi cập nhật thành công
+            return render(request, 'user/profile.html') 
         except Nguoidung.DoesNotExist:
             messages.error(request, 'Người dùng không tồn tại.')
             return redirect('profile')
@@ -306,13 +448,18 @@ def profile(request):
     elif action == 'changeAvatar' and request.method == 'POST':
         id_user = request.session.get('manguoidung')
         avatar = request.FILES.get('avatar')  # Lấy tệp tải lên
-        
+
         try:
             nguoidung = Nguoidung.objects.get(manguoidung=id_user)
-            nguoidung.image = avatar  # Gán tệp tải lên cho trường image
-            nguoidung.save()
-            request.session['khachHang_image_url']=nguoidung.image.url
-            messages.success(request, 'Ảnh đại diện đã được thay đổi thành công.')
+            
+            # Kiểm tra xem ảnh đại diện mới đã tồn tại trong cơ sở dữ liệu chưa
+            if Nguoidung.objects.filter(image=avatar.name).exists():
+                messages.warning(request, 'Ảnh đại diện này bạn đang dùng.')
+            else:
+                nguoidung.image = avatar  # Gán tệp tải lên cho trường image
+                nguoidung.save()
+                request.session['khachHang_image_url'] = nguoidung.image.url
+                messages.success(request, 'Ảnh đại diện đã được thay đổi thành công.')
             return redirect('profile')
         except Nguoidung.DoesNotExist:
             messages.error(request, 'Người dùng không tồn tại.')
@@ -383,7 +530,9 @@ def nhanvien(request, manhanvien=None):
 
         # Hiển thị danh sách nhân viên
         nhanviens = Nhanvien.objects.all()
-        return render(request, 'admin/nhanvien.html', {'nhanviens': nhanviens})
+        taikhoans = Taikhoan.objects.all()
+        
+        return render(request, 'admin/nhanvien.html', {'nhanviens': nhanviens,'taikhoans': taikhoans})
 
     elif request.method == 'POST':
         action = request.POST.get('action')
@@ -511,7 +660,8 @@ def nguoidung(request, manguoidung=None):
 
         # Hiển thị danh sách nhân viên
         users = Nguoidung.objects.all()
-        return render(request, 'admin/nguoidung.html', {'users': users})
+        taikhoans = Taikhoan.objects.all()
+        return render(request, 'admin/nguoidung.html', {'users': users,'taikhoans': taikhoans})
 
     elif request.method == 'POST':
         action = request.POST.get('action')
@@ -547,12 +697,12 @@ def nguoidung(request, manguoidung=None):
                 nguoidung = get_object_or_404(Nguoidung, manguoidung=manguoidung)
                 taikhoan_instance = get_object_or_404(Taikhoan, idtaikhoan=request.POST.get('accountId'))
                 nguoidung.hovaten = request.POST.get('name')
-                manguoidung.email = request.POST.get('email')
-                manguoidung.phone = request.POST.get('phone')
-                manguoidung.diachi = request.POST.get('address')
-                manguoidung.image = request.POST.get('Image')
-                manguoidung.idtaikhoan = taikhoan_instance
-                manguoidung.save()
+                nguoidung.email = request.POST.get('email')
+                nguoidung.phone = request.POST.get('phone')
+                nguoidung.diachi = request.POST.get('address')
+                nguoidung.image = request.POST.get('Image')
+                nguoidung.idtaikhoan = taikhoan_instance
+                nguoidung.save()
                 messages.success(request, 'Thông tin người dùng đã được cập nhật thành công.')
                 return redirect('nguoidung')
             except Nguoidung.DoesNotExist:
@@ -563,3 +713,4 @@ def nguoidung(request, manguoidung=None):
                 return redirect('nguoidung')
 
     return redirect('nguoidung')
+
