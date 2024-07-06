@@ -914,8 +914,11 @@ def tonkho(request, idtonkho=None):
             except Tonkho.DoesNotExist:
                 messages.error(request, 'Không tìm thấy tồn kho.')
                 return redirect('tonkho')
-
+     
         tonkhos = Tonkho.objects.all()
+           # Gọi hàm notify_low_stock để kiểm tra và hiển thị thông báo
+        for tonkho in tonkhos:
+            notify_low_stock(request, tonkho)
         khos = Kho.objects.all()
         nongsans = Nongsan.objects.all()
         return render(request, 'admin/tonkho.html', {'tonkhos': tonkhos, 'nongsans' : nongsans, 'khos':khos})
@@ -997,6 +1000,11 @@ def tonkho(request, idtonkho=None):
                 return redirect('tonkho')
 
     return redirect('tonkho')
+
+def notify_low_stock(request, tonkho_instance):
+    gioihan_default = 10  # Giới hạn số lượng mặc định (số lượng còn dưới giới hạn này sẽ hiển thị thông báo)
+    if tonkho_instance.soluong <= gioihan_default:
+        messages.warning(request, f'Sản phẩm {tonkho_instance.idnongsan} sắp hết hàng. Số lượng còn lại: {tonkho_instance.soluong}.')
 
 def nhacungcap(request, manhacungcap=None):
     if request.session.get('user_role') != 'admin':
