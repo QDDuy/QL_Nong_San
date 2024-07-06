@@ -253,6 +253,7 @@ class Migration(migrations.Migration):
                 ('idorder', models.CharField(db_column='IdOrder', max_length=50, primary_key=True, serialize=False)),
                 ('ngaygiaodich', models.DateField(blank=True, db_column='NgayGiaoDich', null=True)),
                 ('loaigiaodich', models.CharField(blank=True, db_column='LoaiGiaoDich', max_length=255, null=True)),
+
                 ('soluong', models.IntegerField(blank=True, db_column='SoLuong', null=True)),
             ],
             options={
