@@ -1,0 +1,264 @@
+{%load static%}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Thông tin nhân viên</title>
+    <meta
+      content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
+      name="viewport"
+    />
+    <link
+      rel="icon"
+      href="{%static ''%}img/kaiadmin/favicon.ico"
+      type="image/x-icon"
+    />
+
+    <!-- Fonts and icons -->
+    <script src="{%static 'admin/assets/js/plugin/webfont/webfont.min.js'%}"></script>
+    <script>
+      WebFont.load({
+        google: { families: ["Public Sans:300,400,500,600,700"] },
+        custom: {
+          families: [
+            "Font Awesome 5 Solid",
+            "Font Awesome 5 Regular",
+            "Font Awesome 5 Brands",
+            "simple-line-icons",
+          ],
+          urls: ["{%static 'admin/assets/css/fonts.min.css'%}"],
+        },
+        active: function () {
+          sessionStorage.fonts = true;
+        },
+      });
+    </script>
+
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="{%static 'admin/assets/css/bootstrap.min.css'%}" />
+    <link rel="stylesheet" href="{%static 'admin/assets/css/plugins.min.css'%}" />
+    <link rel="stylesheet" href="{%static 'admin/assets/css/kaiadmin.min.css'%}" />
+
+    <!-- CSS Just for demo purpose, don't include it in your project -->
+    <link rel="stylesheet" href="{%static 'admin/assets/css/demo.css'%}" />
+  </head>
+  <body>
+    <div class="wrapper">
+      {%include 'admin/sidebar.html'%}
+      
+      <div class="main-panel">
+        <div class="main-header">
+          <div class="main-header-logo">
+            <!-- Logo Header -->
+            <div class="logo-header" data-background-color="dark">
+              <a href="../index.html" class="logo">
+                <img
+                  src="{%static 'admin/assets/img/kaiadmin/logo_light.svg'%}"
+                  alt="navbar brand"
+                  class="navbar-brand"
+                  height="20"
+                />
+              </a>
+              <div class="nav-toggle">
+                <button class="btn btn-toggle toggle-sidebar">
+                  <i class="gg-menu-right"></i>
+                </button>
+                <button class="btn btn-toggle sidenav-toggler">
+                  <i class="gg-menu-left"></i>
+                </button>
+              </div>
+              <button class="topbar-toggler more">
+                <i class="gg-more-vertical-alt"></i>
+              </button>
+            </div>
+            <!-- End Logo Header -->
+            
+          </div>
+          {%include 'admin/navbar.html'%}
+        </div>
+        <div class="container">
+            <div class="row">
+                <div class="card">
+                    <div class="card-body">
+                        <ul class="nav nav-pills nav-secondary" id="pills-tab" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="pills-home-tab" data-bs-toggle="pill" href="#pills-home" role="tab" aria-controls="pills-home" aria-selected="true">Thông tin</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="pills-profile-tab" data-bs-toggle="pill" href="#pills-profile" role="tab" aria-controls="pills-profile" aria-selected="false">Thay đổi mật khẩu</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content mt-2 mb-3" id="pills-tabContent">
+                            <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
+                                <div class="col-lg-12">
+                                    <form method="post" enctype="multipart/form-data" action="?action=changeAvatar">
+                                      {% csrf_token %}
+                                    <div class="card mb-4">
+                                      <div class="card-body text-center">
+                                        <img src="{{request.session.nhanVien_image}}" alt="avatar"
+                                          class="rounded-circle img-fluid" style="width: 180px;height:198px;">
+                                        <h5 class="my-3">{{request.session.nhanVien_name}}</h5>
+                          
+                                        <input type="file" name="avatar">
+                                            <button class="btn btn-success" type="submit">
+                                              <span class="btn-label">
+                                                <i class="fa fa-check"></i>
+                                              </span>
+                                              Save avatar
+                                            </button>
+                                      </div>
+                                    </div>
+                                    
+                                    </form>
+                                  </div>
+                                  <div class="col-lg-12 mt-5">
+                                    <form method="post" action="?action=update">
+                                      {% csrf_token %}
+                                    <input hidden name="action" value="update">
+                                    <div class="card mb-4">
+                                      <div class="card-body">
+                                        <div class="row">
+                                          <div class="col-sm-3">
+                                            <p class="mb-0">Full Name</p>
+                                          </div>
+                                          <div class="col-sm-9">
+                                            <input
+                                            type="text"
+                                            class="form-control"
+                                            id="fullname"
+                                            placeholder="Enter Email"
+                                            value="{{request.session.nhanVien_name}}"
+                                            name="fullname"
+                                          />
+                                          </div>
+                                        </div>
+                                        <hr>
+                                        <div class="row">
+                                          <div class="col-sm-3">
+                                            <p class="mb-0">Email</p>
+                                          </div>
+                                          <div class="col-sm-9">
+                                            <input
+                                            type="email"
+                                            class="form-control"
+                                            id="email2"
+                                            placeholder="Enter Email"
+                                            value="{{request.session.nhanVien_email}}"
+                                            name="email"
+                                          />
+                                          </div>
+                                        </div>
+                                        <hr>
+                                        <div class="row">
+                                          <div class="col-sm-3">
+                                            <p class="mb-0">Phone</p>
+                                          </div>
+                                          <div class="col-sm-9">
+                                            <input
+                                            type="text"
+                                            class="form-control"
+                                            id="email2"
+                                            placeholder="Enter Phone"
+                                            value="{{request.session.nhanVien_phone}}"
+                                            name="phone"
+                                          />
+                                          </div>
+                                        </div>
+                                        <hr>
+                                        
+                                        
+                                      </div>
+                                    </div>
+                                    <div class="row">
+                                      <div class="col-sm-3">
+                                        <button class="btn btn-success" type="submit">
+                                          <span class="btn-label">
+                                            <i class="fa fa-check"></i>
+                                          </span>
+                                          Save Changes
+                                        </button>
+                                      </div>
+                                    </div>
+                                    </form> 
+                                  </div>
+                            </div>
+                            <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">
+                                <div class="col-lg-12">
+                                    <form method="post" action="?action=changePass">
+                                      {% csrf_token %}
+                                    <input hidden name="action" value="changePass">
+                                    <div class="card mb-4">
+                                      <div class="card-body">
+                                        <div class="row">
+                                          <div class="col-sm-3">
+                                            <p class="mb-0">Password</p>
+                                          </div>
+                                          <div class="col-sm-9">
+                                            <input
+                                            type="Password"
+                                            class="form-control"
+                                            id="fullname"
+                                            placeholder="Enter current password"
+                                            name="current_password"
+                                          />
+                                          </div>
+                                        </div>
+                                        
+                                        <hr>
+                                        <div class="row">
+                                          <div class="col-sm-3">
+                                            <p class="mb-0">New Password</p>
+                                          </div>
+                                          <div class="col-sm-9">
+                                            <input
+                                            type="password"
+                                            class="form-control"
+                                            id="email2"
+                                            placeholder="Enter New Password"
+                                            name="new_password"
+                                          />
+                                          </div>
+                                        </div>
+                                        <hr>
+                        
+                                        <div class="row">
+                                          <div class="col-sm-3">
+                                            <p class="mb-0">Passwrod Confirm</p>
+                                          </div>
+                                          <div class="col-sm-9">
+                                            <input
+                                            type="password"
+                                            class="form-control"
+                                            id="email2"
+                                            placeholder="Password confirm"
+                                            name="confirm_password"
+                                          />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="row">
+                                      <div class="col-sm-3">
+                                        <button class="btn btn-success" type="submit">
+                                          <span class="btn-label">
+                                            <i class="fa fa-check"></i>
+                                          </span>
+                                          Change Password
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </form> 
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+        
+  {%include 'admin/footer.html'%}
+  </body>
+</html>

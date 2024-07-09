@@ -50,6 +50,15 @@
 
 <!-- Cart Page Start -->
 <div class="container-fluid py-5">
+  {% if messages %}
+    <div class="ml-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-slide" role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
   <div class="container py-5">
     <div class="table-responsive">
       <table class="table">
@@ -83,41 +92,45 @@
                 <td>
                   {% if item.price < item.nongsan.gia %}
                     <p class="mb-0 mt-4">
-                      <del>{{ item.nongsan.gia|floatformat:0 }}$</del>
+                      <del>{{ item.nongsan.gia|floatformat:0 }} VNĐ</del>
                       <br>
-                      {{ item.price|floatformat:0 }}$
+                      {{ item.price|floatformat:0 }} VNĐ
                     </p> <!-- Hiển thị giá đã giảm -->
                   {% else %}
-                    <p class="mb-0 mt-4">{{ item.nongsan.gia|floatformat:0 }}$</p> <!-- Hiển thị giá gốc -->
+                    <p class="mb-0 mt-4">{{ item.nongsan.gia|floatformat:0 }} VNĐ</p> <!-- Hiển thị giá gốc -->
                   {% endif %}
                 </td>
                 <td>
-                  <div class="input-group quantity mt-4" style="width: 100px">
+                  <form action="{% url 'update_cart_item' item.cart_id %}" method="post" class="input-group quantity mt-4" style="width: 100px">
+                    {% csrf_token %}
                     <div class="input-group-btn">
-                      <button class="btn btn-sm btn-minus rounded-circle bg-light border">
-                        <i class="fa fa-minus"></i>
-                      </button>
+                        <button type="button" class="btn btn-sm btn-minus rounded-circle bg-light border" onclick="this.parentElement.nextElementSibling.stepDown(); this.parentElement.nextElementSibling.onchange();">
+                            <i class="fa fa-minus"></i>
+                        </button>
                     </div>
                     <input
-                      type="number"
-                      class="form-control form-control-sm text-center border-0"
-                      name="quantity"
-                      value="{{ item.quantity }}"
+                        type="number"
+                        class="form-control form-control-sm text-center border-0"
+                        name="quantity"
+                        value="{{ item.quantity }}"
+                        min="1"
+                        onchange="this.form.submit();"
                     >
                     <div class="input-group-btn">
-                      <button class="btn btn-sm btn-plus rounded-circle bg-light border">
-                        <i class="fa fa-plus"></i>
-                      </button>
+                        <button type="button" class="btn btn-sm btn-plus rounded-circle bg-light border" onclick="this.parentElement.previousElementSibling.stepUp(); this.parentElement.previousElementSibling.onchange();">
+                            <i class="fa fa-plus"></i>
+                        </button>
                     </div>
-                  </div>
+                </form>
                 </td>
                 <td>
                   <p class="mb-0 mt-4">{{ item.total_price|floatformat:0 }} VNĐ</p> <!-- Tính toán tổng giá -->
                 </td>
                 <td>
-                  <button class="btn btn-md rounded-circle bg-light border mt-4">
+                 
+                  <a href="{% url 'delete_cart_item' item.cart_id %}" class="btn btn-md btn-danger rounded-circle bg-light border ml-2 mt-3">
                     <i class="fa fa-times text-danger"></i>
-                  </button>
+                </a>
                 </td>
               </tr>
             {% endfor %}
@@ -146,10 +159,7 @@
             <h1 class="display-6 mb-4">
               Cart <span class="fw-normal">Total</span>
             </h1>
-            <div class="d-flex justify-content-between mb-4">
-              <h5 class="mb-0 me-4">Subtotal:</h5>
-              <p class="mb-0">$96.00</p>
-            </div>
+           
             
           </div>
           <div

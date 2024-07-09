@@ -166,7 +166,7 @@ class Nguoidung(models.Model):
     phone = models.CharField(db_column='Phone', max_length=20, blank=True, null=True)  # Field name made lowercase.
     email = models.CharField(db_column='Email', max_length=100, blank=True, null=True)  # Field name made lowercase.
     idtaikhoan = models.ForeignKey('Taikhoan', models.DO_NOTHING, db_column='IdTaiKhoan', blank=True, null=True)  # Field name made lowercase.
-    image=models.ImageField(upload_to='',null=True, blank=True)
+    image=models.ImageField(upload_to='nguoidung',null=True, blank=True)
     class Meta:
         managed = False
         db_table = 'nguoidung'
@@ -192,7 +192,7 @@ class Nhanvien(models.Model):
     luong = models.DecimalField(db_column='Luong', max_digits=12, decimal_places=2, blank=True, null=True)  # Field name made lowercase.
     calamviec = models.CharField(db_column='CaLamViec', max_length=50, blank=True, null=True)  # Field name made lowercase.
     idtaikhoan = models.ForeignKey('Taikhoan', models.DO_NOTHING, db_column='IdTaiKhoan', blank=True, null=True)  # Field name made lowercase.
-    image=models.ImageField(upload_to='nongsan/',null=True, blank=True)
+    image=models.ImageField(upload_to='nhanvien/',null=True, blank=True)
     class Meta:
         managed = False
         db_table = 'nhanvien'
@@ -205,7 +205,7 @@ class Nongsan(models.Model):
     gia = models.DecimalField(db_column='Gia', max_digits=15, decimal_places=2, blank=True, null=True)  # Field name made lowercase.
     trongluong = models.DecimalField(db_column='TrongLuong', max_digits=10, decimal_places=2, blank=True, null=True)  # Field name made lowercase.
     madanhmuc = models.ForeignKey(Danhmuc, models.DO_NOTHING, db_column='MaDanhMuc', blank=True, null=True)  # Field name made lowercase.
-    image=models.ImageField(null=True, blank=True )
+    image=models.ImageField(upload_to='nongsan/',null=True, blank=True )
     class Meta:
         managed = False
         db_table = 'nongsan'

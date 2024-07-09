@@ -11,21 +11,22 @@ from datetime import date
 import uuid
 from django.utils.dateparse import parse_date
 from django.db.models import Count
-from django.db.models import F, ExpressionWrapper, DecimalField, Value,Case,When,Sum,IntegerField
+from django.db.models import F, ExpressionWrapper, DecimalField, Value,Case,When,Sum,IntegerField, BooleanField
 from django.db.models.functions import Coalesce
+from django.db.models.functions import TruncDate
+from django.utils import timezone
+from datetime import timedelta
+
+
 
 
 def home(request):
-    # Lấy tất cả sản phẩm kèm danh mục của chúng (sử dụng select_related để tối ưu hóa)
     products = Nongsan.objects.select_related('madanhmuc').all()
 
-    # Lấy danh sách tất cả sản phẩm (không cần select_related ở đây nếu chỉ cần thông tin từ bảng Nongsan)
     product_danhmuc = Nongsan.objects.all()
 
-    # Lấy tất cả danh mục
     categories = Danhmuc.objects.all()
 
-    # Truy vấn sản phẩm bán chạy nhất từ các đơn hàng đã hoàn tất
     best_selling_products = Nongsan.objects.annotate(
         total_sold=Sum(
             Case(
@@ -64,7 +65,14 @@ def home(request):
             output_field=IntegerField()
         )
     )
-
+    
+    
+   # Lấy manguoidung từ session của người dùng
+    manguoidung = request.session.get('manguoidung')
+    # Lấy số lượng sản phẩm trong giỏ hàng của người dùng
+    num_products_in_cart = Cart.objects.filter(user_id=manguoidung).count()
+    request.session['num_products_in_cart'] = num_products_in_cart
+    
     context = {
         'products': products,
         'categories': categories,
@@ -134,16 +142,49 @@ def shop(request):
     return render(request, 'user/shop.html', context)
 
 
-def shop_detail(request,idnongsan):
-    nongsan=get_object_or_404(Nongsan,idnongsan=idnongsan)
-    
-    return render(request, 'user/shop-detail.html',{'nongsan':nongsan})
+def shop_detail(request, idnongsan):
+    nongsan = get_object_or_404(Nongsan, idnongsan=idnongsan)
+
+    tonkho = Tonkho.objects.filter(idnongsan=nongsan).aggregate(total_soluong=Sum('soluong'))
+    total_soluong = tonkho['total_soluong'] if tonkho['total_soluong'] is not None else 0
+
+    today = date.today()
+    nongsan_with_discount = Nongsan.objects.annotate(
+        gia_da_giam=Case(
+            When(
+                giamgia__ngaybatdau__lte=today,
+                giamgia__ngayketthuc__gte=today,
+                then=ExpressionWrapper(
+                    F('gia') * (1 - F('giamgia__phantramgiam') / 100),
+                    output_field=DecimalField(max_digits=15, decimal_places=2)
+                )
+            ),
+            default=F('gia'),
+            output_field=DecimalField(max_digits=15, decimal_places=2)
+        ),
+        giamgia_hieu_luc=Case(
+            When(
+                giamgia__ngaybatdau__lte=today,
+                giamgia__ngayketthuc__gte=today,
+                then=Value(True)
+            ),
+            default=Value(False),
+            output_field=BooleanField()
+        )
+    ).get(idnongsan=idnongsan)
+
+    context = {
+        'nongsan': nongsan_with_discount,
+        'total_soluong': total_soluong,
+    }
+    return render(request, 'user/shop-detail.html', context)
+
 def contact(request):
     context = {}
     return render(request, 'user/contact.html', context)
 
 def nhanvien(request, manhanvien=None):
-    if request.session.get('user_role') != 'admin':
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
         return redirect('/login/')  # Chuyển hướng đến trang đăng nhập nếu không phải admin
 
     if request.method == 'GET':
@@ -160,7 +201,8 @@ def nhanvien(request, manhanvien=None):
 
         # Hiển thị danh sách nhân viên
         nhanviens = Nhanvien.objects.all()
-        return render(request, 'admin/nhanvien.html', {'nhanviens': nhanviens})
+        taikhoans = Taikhoan.objects.filter(role__in=['admin', 'employee'])
+        return render(request, 'admin/nhanvien.html', {'nhanviens': nhanviens, 'taikhoans': taikhoans})
 
     elif request.method == 'POST':
         action = request.POST.get('action')
@@ -171,7 +213,7 @@ def nhanvien(request, manhanvien=None):
             salary = request.POST.get('salary')
             shift = request.POST.get('shift')
             accountId = request.POST.get('accountId')
-            Image = request.POST.get('Image')
+            image = request.FILES.get('Image')  # Lấy dữ liệu tệp tin ảnh từ request.FILES
 
             try:
                 taikhoan_instance = Taikhoan.objects.get(idtaikhoan=accountId)
@@ -188,7 +230,7 @@ def nhanvien(request, manhanvien=None):
                 luong=salary,
                 calamviec=shift,
                 idtaikhoan=taikhoan_instance,
-                image=Image
+                image=image  # Lưu trữ ảnh vào trường ImageField
             )
             messages.success(request, 'Nhân viên mới đã được thêm thành công.')
             return redirect('nhanvien')
@@ -202,7 +244,12 @@ def nhanvien(request, manhanvien=None):
                 nhanvien.sodienthoai = request.POST.get('phone')
                 nhanvien.luong = request.POST.get('salary')
                 nhanvien.calamviec = request.POST.get('shift')
-                nhanvien.image = request.POST.get('Image')
+                
+                # Xử lý chỉnh sửa ảnh nếu có tệp tin mới được tải lên
+                new_image = request.FILES.get('Image')
+                if new_image:
+                    nhanvien.image = new_image
+                
                 nhanvien.idtaikhoan = taikhoan_instance
                 nhanvien.save()
                 messages.success(request, 'Thông tin nhân viên đã được cập nhật thành công.')
@@ -247,16 +294,17 @@ def cart(request):
                     output_field=DecimalField(max_digits=15, decimal_places=2)
                 )
             ).get(idnongsan=nongsan.idnongsan).gia_da_giam
-
+            
+            request.session['num_items_in_cart'] = Cart.objects.filter(user_id=user_id).count()
             item.price = gia_da_giam
             item.total_price = gia_da_giam * item.quantity
             total_quantity += item.quantity
             total_price += item.total_price
-
         context = {
             'cart_items': cart_items,
             'total_quantity': total_quantity,
             'total_price': total_price,
+            
         }
 
         return render(request, 'user/cart.html', context)
@@ -264,7 +312,36 @@ def cart(request):
         return redirect('login') # Điều hướng đến trang đăng nhập nếu không có ID người dùng trong session
 
 
+def delete_cart_item(request, item_id):
+    user_id = request.session.get('manguoidung')
+    if user_id:
+        cart_item = get_object_or_404(Cart, cart_id=item_id, user_id=user_id)
+        cart_item.delete()
+        num_items_in_cart = Cart.objects.filter(user_id=user_id).count()
+        request.session['num_items_in_cart'] = num_items_in_cart
+        return redirect('cart')
     
+    else:
+        return redirect('login')
+
+def update_cart_item(request, item_id):
+    user_id = request.session.get('manguoidung')
+    if user_id:
+        if request.method == 'POST':
+            new_quantity = int(request.POST.get('quantity', 1))
+            cart_item = get_object_or_404(Cart, cart_id=item_id, user_id=user_id)
+            
+            tonkho = Tonkho.objects.filter(idnongsan=cart_item.nongsan).first()
+            if tonkho and tonkho.soluong >= new_quantity:
+                cart_item.quantity = new_quantity
+                cart_item.save()
+                return redirect('cart')
+            else:
+                messages.error(request, 'Tồn kho không đủ')
+                return redirect('cart')
+    else:
+        return redirect('login')
+
 def checkout(request):
     user_id = request.session.get('manguoidung')
     
@@ -343,7 +420,6 @@ def login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-
         try:
             user = Taikhoan.objects.get(username=username)
             if check_password(password, user.password):  # Check password using Django's check_password
@@ -356,28 +432,50 @@ def login(request):
                     request.session['manguoidung'] = nguoidung.manguoidung
                     request.session['khachHang_name'] = nguoidung.hovaten
                     request.session['khachHang_email'] = nguoidung.email
-                    
-                    if nguoidung.image:
-                        try:
-                            image_url = nguoidung.image.url
-                            print(f"Image URL: {image_url}")
-                            request.session['khachHang_image_url'] = image_url
-                        except Exception as e:
-                            print(f"Error accessing image URL: {e}")
-                            request.session['khachHang_image_url'] = None
-                    else:
-                        request.session['khachHang_image_url'] = None
-                    
                     request.session['khachHang_address'] = nguoidung.diachi
                     request.session['khachHang_phone'] = nguoidung.phone
                     print(f"User information stored in session: {nguoidung.manguoidung}, {nguoidung.hovaten}")
+                    
+                    try:
+                        if nguoidung.image and nguoidung.image.name:  # Kiểm tra xem có tệp tin nào được liên kết với 'image' không
+                            image_url = nguoidung.image.url
+                            print(f"Image URL: {image_url}")
+                            request.session['khachHang_image_url'] = image_url
+                        else:
+                            request.session['khachHang_image_url'] = None
+                    except Exception as e:
+                        print(f"Error accessing image URL: {e}")
+                        request.session['khachHang_image_url'] = None
+
                 except Nguoidung.DoesNotExist:
                     print("Nguoidung does not exist for this user.")
                     pass
 
-                if user.role == 'admin': 
-                    return redirect('nhanvien')  
+                try:
+                    nhanvien = Nhanvien.objects.get(idtaikhoan=user.idtaikhoan)
+                    request.session['manhanvien'] = nhanvien.manhanvien
+                    request.session['nhanVien_name'] = nhanvien.tennhanvien
+                    request.session['nhanVien_email'] = nhanvien.email
+                    request.session['nhanVien_phone'] = nhanvien.sodienthoai    
+                    if nhanvien.image:
+                        try:
+                            image_url = nhanvien.image.url
+                            print(f"Image URL: {image_url}")
+                            request.session['nhanVien_image'] = image_url
+                        except Exception as e:
+                            print(f"Error accessing image URL: {e}")
+                            request.session['nhanVien_image'] = None
+                    else:
+                        request.session['nhanVien_image'] = None
+                    print(f"Nhanvien information stored in session: {nhanvien.manhanvien}, {nhanvien.tennhanvien}")
+                except Nhanvien.DoesNotExist:
+                    print("Nhanvien does not exist for this user.")
+                    pass
+
+                if user.role == 'admin' or user.role == 'employee' : 
+                    return redirect('/dashboard/')  
                 else:
+                   
                     return redirect('/')  
 
             else:
@@ -422,8 +520,8 @@ def register(request):
             messages.error(request, 'Email đã tồn tại.')
             return render(request, 'user/register.html')
             
-        id_taikhoan = f"TK{uuid.uuid4()}"
-        id_nguoidung = f"KH{uuid.uuid4()}"
+        id_taikhoan = f"TK-{str(uuid.uuid4())[:5]}"
+        id_nguoidung =f"KH-{str(uuid.uuid4())[:5]}"
         hashed_password = make_password(password)
         taikhoan = Taikhoan.objects.create(
             
@@ -445,6 +543,7 @@ def register(request):
         messages.success(request, 'Đăng ký thành công. Bạn có thể đăng nhập ngay bây giờ.')
         return redirect('login')
     return render(request, 'user/register.html')
+
 
 
 
@@ -475,10 +574,24 @@ def add_to_cart(request, product_id):
         )
     ).get(idnongsan=product_id).gia_da_giam
 
-    quantity = 1
-    
+    # Lấy số lượng từ request.POST, mặc định là 1 nếu không có
+    quantity = int(request.POST.get('quantity', 1))
+    if quantity < 1:
+        quantity = 1
+
+    # Kiểm tra tồn kho
+    tonkho = Tonkho.objects.filter(idnongsan=nongsan).aggregate(total_soluong=Sum('soluong'))
+    if tonkho['total_soluong'] is None or tonkho['total_soluong'] < quantity:
+        # Thêm thông báo lỗi và chuyển hướng đến trang chi tiết sản phẩm
+        messages.error(request, 'Tồn kho không đủ')
+        return redirect('shop-detail', product_id=product_id)
+
     try:
         cart_item = Cart.objects.get(user=user, nongsan=nongsan)
+        # Kiểm tra tồn kho khi cập nhật số lượng
+        if tonkho['total_soluong'] < cart_item.quantity + quantity:
+            messages.error(request, 'Tồn kho không đủ')
+            return redirect('shop-detail', product_id=product_id)
         cart_item.quantity += quantity
         cart_item.save()
     except Cart.DoesNotExist:
@@ -492,19 +605,20 @@ def add_to_cart(request, product_id):
 
     # Thêm giá đã giảm vào session hoặc context để sử dụng sau này
     request.session['gia_da_giam'] = float(gia_da_giam)
-    
-    return redirect('cart')
+    request.session['num_items_in_cart'] = Cart.objects.filter(user_id=user_id).count()
 
+    return redirect('cart')
     
     
 def profile(request):
-    action=request.GET.get('action')
-    if(action=='update'):
-        id_user=request.session.get('manguoidung')
-        fullname=request.POST.get('fullname')
-        email=request.POST.get('email')
-        phone=request.POST.get('phone')
-        address=request.POST.get('address')
+    action = request.GET.get('action')
+    id_user = request.session.get('manguoidung')
+
+    if action == 'update':
+        fullname = request.POST.get('fullname')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        address = request.POST.get('address')
         try:
             nguoidung = Nguoidung.objects.get(manguoidung=id_user)
             nguoidung.hovaten = fullname
@@ -524,9 +638,7 @@ def profile(request):
             return redirect('profile')
     
     elif action == 'changeAvatar' and request.method == 'POST':
-        id_user = request.session.get('manguoidung')
         avatar = request.FILES.get('avatar')  # Lấy tệp tải lên
-
         try:
             nguoidung = Nguoidung.objects.get(manguoidung=id_user)
             
@@ -542,8 +654,30 @@ def profile(request):
         except Nguoidung.DoesNotExist:
             messages.error(request, 'Người dùng không tồn tại.')
             return redirect('profile')
-    return render(request, 'user/profile.html')
+    
+    elif action == 'changePass' and request.method == 'POST':
+        idtaikhoan = request.session.get('checklogin')
+        current_password = request.POST.get('current_password')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        try:
+            account = Taikhoan.objects.get(idtaikhoan=idtaikhoan)
+            if check_password(current_password, account.password):
+                if new_password == confirm_password:
+                    account.password = make_password(new_password)
+                    account.save()
+                    messages.success(request, 'Mật khẩu đã được thay đổi thành công.')
+                else:
+                    messages.error(request, 'Mật khẩu mới và xác nhận mật khẩu không khớp.')
+            else:
+                messages.error(request, 'Mật khẩu hiện tại không đúng.')
+            return redirect('profile')
+        except Taikhoan.DoesNotExist:
+            messages.error(request, 'Người dùng không tồn tại.')
+            return redirect('profile')
 
+    return render(request, 'user/profile.html')
 
 def order_history(request):
     user_id = request.session.get('manguoidung')
@@ -564,7 +698,7 @@ def order_history(request):
 
 
 def manage(request):
-    if request.session.get('user_role') != 'admin':
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
         return redirect('/login/') 
     context = {}
     return render(request, 'user/login.html', context)
@@ -579,7 +713,7 @@ def logout(request):
 
 
 def kho(request, idkho=None):
-    if request.session.get('user_role') != 'admin':
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
         return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('url')
@@ -625,7 +759,7 @@ def kho(request, idkho=None):
                 return redirect('kho')
 
 def nongsan(request, IdNongSan=None):
-    if request.session.get('user_role') != 'admin':
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
         return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('action')
@@ -690,7 +824,7 @@ def nongsan(request, IdNongSan=None):
 
 
 def order(request, madonhang=None):
-    if request.session.get('user_role') != 'admin':
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
         return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('action')
@@ -761,7 +895,7 @@ def order(request, madonhang=None):
 
 
 def donhangdetail(request, ma_donhang_detail=None):
-    if request.session.get('user_role') != 'admin':
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
         return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('action')
@@ -831,7 +965,7 @@ def donhangdetail(request, ma_donhang_detail=None):
 
 
 def giamgia(request, magiamgia=None):
-    if request.session.get('user_role') != 'admin':
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
         return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('action')
@@ -901,7 +1035,7 @@ def giamgia(request, magiamgia=None):
 
 
 def tonkho(request, idtonkho=None):
-    if request.session.get('user_role') != 'admin':
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
         return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('url')
@@ -916,8 +1050,9 @@ def tonkho(request, idtonkho=None):
                 return redirect('tonkho')
      
         tonkhos = Tonkho.objects.all()
-           # Gọi hàm notify_low_stock để kiểm tra và hiển thị thông báo
+         # Kiểm tra và thông báo về các mặt hàng sắp hết hạn
         for tonkho in tonkhos:
+            notify_expiry_status(request, tonkho)
             notify_low_stock(request, tonkho)
         khos = Kho.objects.all()
         nongsans = Nongsan.objects.all()
@@ -1006,8 +1141,30 @@ def notify_low_stock(request, tonkho_instance):
     if tonkho_instance.soluong <= gioihan_default:
         messages.warning(request, f'Sản phẩm {tonkho_instance.idnongsan} sắp hết hàng. Số lượng còn lại: {tonkho_instance.soluong}.')
 
+def tonkho_list(request):
+    tonkhos = Tonkho.objects.all()
+
+    for tonkho in tonkhos:
+        notify_expiry_status(request, tonkho)
+
+    return render(request, 'your_template.html', {'tonkhos': tonkhos})
+
+def notify_expiry_status(request, tonkho):
+    expiry_date = tonkho.ngayhethan
+    today = timezone.now().date()
+
+    # Kiểm tra xem mặt hàng đã hết hạn hay chưa
+    if expiry_date < today:
+        messages.error(request, f"Mặt hàng {tonkho.idtonkho} đã hết hạn vào ngày {expiry_date}. Vui lòng kiểm tra lại.")
+    elif expiry_date == today:
+        messages.warning(request, f"Mặt hàng {tonkho.idtonkho} sẽ hết hạn vào hôm nay, {expiry_date}.")
+    else:
+        two_days_from_now = today + timedelta(days=2)
+        if expiry_date <= two_days_from_now:
+            messages.warning(request, f"Mặt hàng {tonkho.idtonkho} sắp hết hạn vào ngày {expiry_date}.")
+
 def nhacungcap(request, manhacungcap=None):
-    if request.session.get('user_role') != 'admin':
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
         return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('url')
@@ -1079,7 +1236,7 @@ def nhacungcap(request, manhacungcap=None):
 
 
 def ordernhacungcap(request, idorder=None):
-    if request.session.get('user_role') != 'admin':
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
         return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('url')
@@ -1158,7 +1315,7 @@ def ordernhacungcap(request, idorder=None):
     return redirect('ordernhacungcap')
 
 def account(request, idtaikhoan=None):
-    if request.session.get('user_role') != 'admin':
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
         return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('url')
@@ -1215,8 +1372,9 @@ def account(request, idtaikhoan=None):
 
 
 
+
 def nguoidung(request, manguoidung=None):
-    if request.session.get('user_role') != 'admin':
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
         return redirect('/login/') 
     if request.method == 'GET':
         url = request.GET.get('url')
@@ -1230,10 +1388,11 @@ def nguoidung(request, manguoidung=None):
                 messages.error(request, 'Không tìm thấy người dùng.')
                 return redirect('nguoidung')
 
-        # Hiển thị danh sách nhân viên
+        # Hiển thị danh sách người dùng
         users = Nguoidung.objects.all()
-        taikhoans = Taikhoan.objects.all()
-        return render(request, 'admin/nguoidung.html', {'users': users,'taikhoans': taikhoans})
+        taikhoans = Taikhoan.objects.filter(role__in=['customer'])
+
+        return render(request, 'admin/nguoidung.html', {'users': users, 'taikhoans': taikhoans})
 
     elif request.method == 'POST':
         action = request.POST.get('action')
@@ -1243,7 +1402,7 @@ def nguoidung(request, manguoidung=None):
             phone = request.POST.get('phone')
             address = request.POST.get('address')
             accountId = request.POST.get('accountId')
-            Image = request.POST.get('Image')
+            image = request.FILES.get('Image')  # Lấy dữ liệu tệp tin ảnh từ request.FILES
 
             try:
                 taikhoan_instance = Taikhoan.objects.get(idtaikhoan=accountId)
@@ -1259,7 +1418,7 @@ def nguoidung(request, manguoidung=None):
                 phone=phone,
                 diachi=address,
                 idtaikhoan=taikhoan_instance,
-                image=Image
+                image=image  # Lưu trữ ảnh vào trường ImageField
             )
             messages.success(request, 'Người dùng đã được thêm thành công.')
             return redirect('nguoidung')
@@ -1272,7 +1431,12 @@ def nguoidung(request, manguoidung=None):
                 nguoidung.email = request.POST.get('email')
                 nguoidung.phone = request.POST.get('phone')
                 nguoidung.diachi = request.POST.get('address')
-                nguoidung.image = request.POST.get('Image')
+                
+                # Xử lý chỉnh sửa ảnh nếu có tệp tin mới được tải lên
+                new_image = request.FILES.get('Image')
+                if new_image:
+                    nguoidung.image = new_image
+                
                 nguoidung.idtaikhoan = taikhoan_instance
                 nguoidung.save()
                 messages.success(request, 'Thông tin người dùng đã được cập nhật thành công.')
@@ -1285,3 +1449,91 @@ def nguoidung(request, manguoidung=None):
                 return redirect('nguoidung')
 
     return redirect('nguoidung')
+
+def profileManage(request):
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
+        return redirect('/login/') 
+    action = request.GET.get('action')
+    manhanvien = request.session.get('manhanvien')
+
+    if action == 'update' and request.method == 'POST':
+        fullname = request.POST.get('fullname')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+
+        try:
+            nhanvien = Nhanvien.objects.get(manhanvien=manhanvien)
+            nhanvien.tennhanvien = fullname
+            nhanvien.email = email
+            nhanvien.sodienthoai = phone
+            nhanvien.save()
+            messages.success(request, 'Thông tin người dùng đã được cập nhật thành công.')
+            request.session['nhanVien_name'] = nhanvien.tennhanvien
+            request.session['nhanVien_email'] =  nhanvien.email
+            request.session['nhanVien_phone'] =  nhanvien.sodienthoai
+        except Nhanvien.DoesNotExist:
+            messages.error(request, 'Người dùng không tồn tại.')
+        return render(request, 'admin/profileManage.html') 
+
+    elif action == 'changeAvatar' and request.method == 'POST':
+        avatar = request.FILES.get('avatar')
+        
+        try:
+            nhanvien = Nhanvien.objects.get(manhanvien=manhanvien)
+
+            if Nhanvien.objects.filter(image=avatar.name).exists():
+                messages.warning(request, 'Ảnh đại diện này bạn đang dùng.')
+            else:
+                nhanvien.image = avatar
+                nhanvien.save()
+                request.session['nhanVien_image'] = nhanvien.image.url
+                messages.success(request, 'Ảnh đại diện đã được thay đổi thành công.')
+        except Nhanvien.DoesNotExist:
+            messages.error(request, 'Người dùng không tồn tại.')
+        return redirect('profile-manage')
+
+    elif action == 'changePass' and request.method == 'POST':
+        idtaikhoan = request.session.get('checklogin')
+        current_password = request.POST.get('current_password')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+
+        try:
+            account = Taikhoan.objects.get(idtaikhoan=idtaikhoan)
+            if check_password(current_password, account.password):
+                if new_password == confirm_password:
+                    account.password = make_password(new_password)
+                    account.save()
+                    messages.success(request, 'Mật khẩu đã được thay đổi thành công.')
+                else:
+                    messages.error(request, 'Mật khẩu mới và xác nhận mật khẩu không khớp.')
+            else:
+                messages.error(request, 'Mật khẩu hiện tại không đúng.')
+        except Taikhoan.DoesNotExist:
+            messages.error(request, 'Người dùng không tồn tại.')
+        return redirect('profile-manage')
+
+    return render(request, 'admin/profileManage.html')
+
+
+
+def dashboard(request):
+        tong_so_don_hang = Donhang.objects.count()
+
+        tong_doanh_thu = Donhang.objects.aggregate(Sum('tonggia'))['tonggia__sum']
+
+        chi_tiet_don_hang = DonHangDetail.objects.all()
+        top_san_pham = DonHangDetail.objects.values('id_nongsan__ten').annotate(total_quantity=Sum('quantity')).order_by('-total_quantity')[:10]
+        doanh_thu_ngay = Donhang.objects.annotate(ngay=TruncDate('ngaydat')).values('ngay').annotate(total_doanh_thu=Sum('tonggia')).order_by('ngay')
+        tong_khach_hang = Nguoidung.objects.count()
+        context = {
+        'tong_so_don_hang': tong_so_don_hang,
+        'tong_doanh_thu': tong_doanh_thu,
+        'chi_tiet_don_hang': chi_tiet_don_hang,
+        'top_san_pham': top_san_pham,
+         'doanh_thu_ngay': doanh_thu_ngay,
+         'tong_khach_hang':tong_khach_hang
+        }
+
+        return render(request, 'admin/adminpage.html',context)
+    

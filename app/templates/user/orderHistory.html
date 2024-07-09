@@ -64,30 +64,35 @@
         </thead>
         <tbody>
           {% if orders %}
-          {% for order in orders %}
-            <tr>
-              <td>{{ order.madonhang }}</td>
-              <td>{{ order.tonggia }}</td>
-              <td>{{ order.ngaydat }}</td>
-              <td>{{ order.trangthai }}</td>
-              <td>
-                <ul>
-                  {% for detail in order.donhangdetail_set.all %}
-                    <li>
-                      <strong>Product:</strong> {{ detail.idnongsan.ten }} <br>
-                      <strong>Quantity:</strong> {{ detail.quantity }} <br>
-                      <strong>Price:</strong> {{ detail.gia }} <br>
-                    </li>
-                  {% endfor %}
-                </ul>
-              </td>
-            </tr>
+  {% for order in orders %}
+    <tr>
+      <td>{{ order.madonhang }}</td>
+      <td>{{ order.tonggia }}</td>
+      <td>{{ order.ngaydat }}</td>
+      <td>{{ order.trangthai }}</td>
+      <td>
+        <ul>
+          {% for detail in order.donhangdetail_set.all %}
+            <li>
+              <strong>Product:</strong> {{ detail.id_nongsan.ten }} <br>
+              <strong>Quantity:</strong> {{ detail.quantity }} <br>
+              <strong>Price:</strong> {{ detail.id_nongsan.gia }} <br>
+              {% if detail.id_nongsan.image %}
+                
+                <img src="{{ detail.id_nongsan.image.url }}" alt="{{ detail.id_nongsan.ten }}" width="100"> <br>
+              {% endif %}
+            </li>
           {% endfor %}
-        {% else %}
-          <tr>
-            <td colspan="5">No orders found.</td>
-          </tr>
-        {% endif %}
+        </ul>
+      </td>
+    </tr>
+  {% endfor %}
+{% else %}
+  <tr>
+    <td colspan="5">No orders found.</td>
+  </tr>
+{% endif %}
+
         </tbody>
       </table>
     </div>

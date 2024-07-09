@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Datatables - Kaiadmin Bootstrap 5 Admin Dashboard</title>
+    <title>Quản lý tài khoản</title>
     <meta
       content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
       name="viewport"
@@ -73,14 +73,9 @@
             </div>
             <!-- End Logo Header -->
           </div>
+          {%include 'admin/navbar.html' %}
         </div>
-        {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
+      
         <div class="container">
           <div class="page-inner">
             <div class="row">
