@@ -1537,3 +1537,52 @@ def dashboard(request):
 
         return render(request, 'admin/adminpage.html',context)
     
+
+def danhmuc(request,id_danhmuc=None):
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
+        return redirect('/login/') 
+    if request.method == 'GET':
+        url = request.GET.get('url')
+        if url == "deletedanhmuc" and id_danhmuc:
+            try:
+                danhmuc = get_object_or_404(Danhmuc, madanhmuc=id_danhmuc)
+                danhmuc.delete()
+                messages.success(request, 'Danh mục đã được xóa thành công.')
+                return redirect('danhmuc')
+            except Danhmuc.DoesNotExist:
+                messages.error(request, 'Không tìm thấy kho.')
+                return redirect('danhmuc')
+        # Hiển thị danh sách kho
+        danhmucs = Danhmuc.objects.all()
+        return render(request, 'admin/danhmuc.html', {'danhmucs': danhmucs})
+    elif request.method == 'POST':
+        action = request.POST.get('action')
+        name = request.POST.get('name')
+        if action == "insertdanhmuc":
+            if Danhmuc.objects.filter(tendanhmuc=name).exists():
+                messages.error(request, 'Tên danh mục đã tồn tại.')
+                return redirect('danhmuc')
+            else:
+                danhmucId = f"DM-{str(uuid.uuid4())[:2]}"
+                Danhmuc.objects.create(
+                    madanhmuc=danhmucId,
+                    tendanhmuc=name,
+                )
+                messages.success(request, 'Danh mục mới đã được thêm thành công.')
+                return redirect('danhmuc')
+            
+        elif action == "editdanhmuc" and id_danhmuc:
+            try:
+                danhmuc = get_object_or_404(Danhmuc, madanhmuc=id_danhmuc)
+                if Danhmuc.objects.filter(tendanhmuc=name).exclude(madanhmuc=id_danhmuc).exists():
+                    messages.error(request, 'Tên danh mục đã tồn tại.')
+                    return redirect('danhmuc')
+                else:
+                    danhmuc.tendanhmuc = name
+                    danhmuc.save()
+                    messages.success(request, 'Thông tin danh mục đã được cập nhật thành công.')
+                    return redirect('danhmuc')
+            except Danhmuc.DoesNotExist:
+                messages.error(request, 'Không tìm thấy danh mục.')
+                return redirect('danhmuc')
+    return render(request, 'admin/danhmuc.html')
