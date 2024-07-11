@@ -16,8 +16,37 @@ from django.db.models.functions import Coalesce
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 from datetime import timedelta
+from django.http import HttpResponse
+from django.db.models import Sum
+from django.db.models.functions import TruncDate
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+import matplotlib.pyplot as plt
+from io import BytesIO
 
 
+def doanh_thu_theo_ngay(request):
+    # Tính toán doanh thu theo từng ngày
+    doanh_thu_ngay = Donhang.objects.annotate(ngay=TruncDate('ngaydat')).values('ngay').annotate(total_doanh_thu=Sum('tonggia')).order_by('ngay')
+
+    # Chuyển dữ liệu sang list để vẽ biểu đồ
+    ngay_list = [entry['ngay'].strftime('%Y-%m-%d') for entry in doanh_thu_ngay]
+    doanh_thu_list = [entry['total_doanh_thu'] for entry in doanh_thu_ngay]
+
+    # Vẽ biểu đồ
+    fig, ax = plt.subplots(figsize=(20,7))
+    ax.plot(ngay_list, doanh_thu_list, marker='o', linestyle='-', color='b')
+    ax.set_title('Doanh thu theo ngày')
+    ax.set_xlabel('Ngày')
+    ax.set_ylabel('Doanh thu (VNĐ)')
+    ax.grid(True)
+    plt.xticks(rotation=45)
+    
+    # Chuyển biểu đồ sang định dạng PNG và lưu vào HttpResponse
+    buffer = BytesIO()
+    canvas = FigureCanvas(fig)
+    canvas.print_png(buffer)
+    plt.close(fig)
+    return HttpResponse(buffer.getvalue(), content_type='image/png')
 
 
 def home(request):
@@ -206,15 +235,19 @@ def nhanvien(request, manhanvien=None):
 
     elif request.method == 'POST':
         action = request.POST.get('action')
-        if action == "insertNV":
-            name = request.POST.get('name')
-            email = request.POST.get('email')
-            phone = request.POST.get('phone')
-            salary = request.POST.get('salary')
-            shift = request.POST.get('shift')
-            accountId = request.POST.get('accountId')
-            image = request.FILES.get('Image')  # Lấy dữ liệu tệp tin ảnh từ request.FILES
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        salary = request.POST.get('salary')
+        shift = request.POST.get('shift')
+        accountId = request.POST.get('accountId')
+        image = request.FILES.get('Image')  # Lấy dữ liệu tệp tin ảnh từ request.FILES
 
+        if action == "insertNV":
+            if Nhanvien.objects.filter(email=email).exists():
+                messages.error(request, 'Email đã tồn tại.')
+                return redirect('nhanvien')
+            
             try:
                 taikhoan_instance = Taikhoan.objects.get(idtaikhoan=accountId)
             except Taikhoan.DoesNotExist:
@@ -239,11 +272,17 @@ def nhanvien(request, manhanvien=None):
             try:
                 nhanvien = get_object_or_404(Nhanvien, manhanvien=manhanvien)
                 taikhoan_instance = get_object_or_404(Taikhoan, idtaikhoan=request.POST.get('accountId'))
-                nhanvien.tennhanvien = request.POST.get('name')
-                nhanvien.email = request.POST.get('email')
-                nhanvien.sodienthoai = request.POST.get('phone')
-                nhanvien.luong = request.POST.get('salary')
-                nhanvien.calamviec = request.POST.get('shift')
+
+                # Kiểm tra email đã tồn tại hay chưa, ngoại trừ nhân viên hiện tại
+                if Nhanvien.objects.filter(email=email).exclude(manhanvien=manhanvien).exists():
+                    messages.error(request, 'Email đã tồn tại.')
+                    return redirect('nhanvien')
+
+                nhanvien.tennhanvien = name
+                nhanvien.email = email
+                nhanvien.sodienthoai = phone
+                nhanvien.luong = salary
+                nhanvien.calamviec = shift
                 
                 # Xử lý chỉnh sửa ảnh nếu có tệp tin mới được tải lên
                 new_image = request.FILES.get('Image')
@@ -262,6 +301,7 @@ def nhanvien(request, manhanvien=None):
                 return redirect('nhanvien')
 
     return redirect('nhanvien')
+
 
 
 def cart(request):
@@ -386,7 +426,6 @@ def checkout(request):
 
                     cart_items.delete()
 
-                messages.success(request, 'Đơn hàng của bạn đã được tạo thành công!')
                 return redirect('home')
 
             except Exception as e:
@@ -583,14 +622,14 @@ def add_to_cart(request, product_id):
     tonkho = Tonkho.objects.filter(idnongsan=nongsan).aggregate(total_soluong=Sum('soluong'))
     if tonkho['total_soluong'] is None or tonkho['total_soluong'] < quantity:
         # Thêm thông báo lỗi và chuyển hướng đến trang chi tiết sản phẩm
-        messages.error(request, 'Tồn kho không đủ')
+        messages.warning(request, 'Hiện tại sản phẩm này đang hết hàng, xin vui lòng chọn sản phẩm khác')
         return redirect('shop-detail', product_id=product_id)
 
     try:
         cart_item = Cart.objects.get(user=user, nongsan=nongsan)
         # Kiểm tra tồn kho khi cập nhật số lượng
         if tonkho['total_soluong'] < cart_item.quantity + quantity:
-            messages.error(request, 'Tồn kho không đủ')
+            messages.warning(request, 'Hiện tại sản phẩm này đang hết hàng, xin vui lòng chọn sản phẩm khác')
             return redirect('shop-detail', product_id=product_id)
         cart_item.quantity += quantity
         cart_item.save()
@@ -841,6 +880,13 @@ def order(request, madonhang=None):
         # Hiển thị danh sách đơn hàng
         donhangs = Donhang.objects.all()
         nguoidungs = Nguoidung.objects.all()  # Lấy danh sách người dùng để hiển thị trong form
+        
+        # Kiểm tra trạng thái đơn hàng
+        pending_donhangs = donhangs.filter(trangthai='Pending')
+        if pending_donhangs.exists():
+            messages.warning(request, f'Bạn đang có {pending_donhangs.count()} đơn hàng chưa xử lý.')
+
+        
         return render(request, 'admin/order.html', {'donhangs': donhangs, 'nguoidungs': nguoidungs})
 
     elif request.method == 'POST':
@@ -916,52 +962,37 @@ def donhangdetail(request, ma_donhang_detail=None):
 
     elif request.method == 'POST':
         action = request.POST.get('action')
-        if action == "insertCTDH":  # Sửa giá trị của action để khớp với form
+        if action == "insertCTDH":
             ma_donhang = request.POST.get('ma_donhang')
             id_nongsan = request.POST.get('id_nongsan')
-            quantity = request.POST.get('quantity')
+            quantity = int(request.POST.get('quantity'))
 
             try:
                 donhang_instance = Donhang.objects.get(madonhang=ma_donhang)
                 nongsan_instance = Nongsan.objects.get(idnongsan=id_nongsan)
-                ma_donhang_detail = f"CTDH-{str(uuid.uuid4())[:5]}"
-                DonHangDetail.objects.create(
-                    ma_donhang_detail=ma_donhang_detail,
-                    ma_donhang=donhang_instance,
-                    id_nongsan=nongsan_instance,
-                    quantity=quantity
-                )
-                messages.success(request, 'Đơn hàng mới đã được thêm thành công.')
+                tonkho_instances = Tonkho.objects.filter(idnongsan=id_nongsan)
+
+                total_stock = sum(tk.soluong for tk in tonkho_instances)
+                if total_stock < quantity:
+                    messages.error(request, 'Số lượng tồn kho không đủ.')
+                else:
+                    ma_donhang_detail = f"CTDH-{str(uuid.uuid4())[:5]}"
+                    DonHangDetail.objects.create(
+                        ma_donhang_detail=ma_donhang_detail,
+                        ma_donhang=donhang_instance,
+                        id_nongsan=nongsan_instance,
+                        quantity=quantity
+                    )
+                    messages.success(request, 'Đơn hàng mới đã được thêm thành công.')
+
             except Donhang.DoesNotExist:
                 messages.error(request, 'Không tìm thấy đơn hàng.')
             except Nongsan.DoesNotExist:
                 messages.error(request, 'Không tìm thấy nông sản.')
 
-            return redirect('donhangdetail')
-
-        elif action == "editCTDH" and ma_donhang_detail:
-            try:
-                donhangdetail_instance = get_object_or_404(DonHangDetail, ma_donhang_detail=ma_donhang_detail)
-                donhang_instance = get_object_or_404(Donhang, madonhang=request.POST.get('ma_donhang'))
-                nongsan_instance = get_object_or_404(Nongsan, idnongsan=request.POST.get('id_nongsan'))
-
-                donhangdetail_instance.ma_donhang = donhang_instance
-                donhangdetail_instance.id_nongsan = nongsan_instance
-                donhangdetail_instance.quantity = request.POST.get('quantity')
-                donhangdetail_instance.save()
-
-                messages.success(request, 'Thông tin chi tiết đơn hàng đã được cập nhật thành công.')
-            except DonHangDetail.DoesNotExist:
-                messages.error(request, 'Không tìm thấy chi tiết đơn hàng.')
-            except Donhang.DoesNotExist:
-                messages.error(request, 'Không tìm thấy đơn hàng.')
-            except Nongsan.DoesNotExist:
-                messages.error(request, 'Không tìm thấy nông sản.')
-
-            return redirect('donhangdetail')
+        return redirect('donhangdetail')
 
     return redirect('donhangdetail')
-
 
 
 def giamgia(request, magiamgia=None):
@@ -1316,33 +1347,38 @@ def ordernhacungcap(request, idorder=None):
 
 def account(request, idtaikhoan=None):
     if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
-        return redirect('/login/') 
+        return redirect('/login/')
+    
     if request.method == 'GET':
         url = request.GET.get('url')
         if url == "deleteAcc" and idtaikhoan:
             try:
                 taikhoan = get_object_or_404(Taikhoan, idtaikhoan=idtaikhoan)
                 taikhoan.delete()
-                messages.success(request, 'Nhân viên đã được xóa thành công.')
+                messages.success(request, 'Tài khoản đã được xóa thành công.')
                 return redirect('account')
-            except Nhanvien.DoesNotExist:
-                messages.error(request, 'Không tìm thấy nhân viên.')
+            except Taikhoan.DoesNotExist:
+                messages.error(request, 'Không tìm thấy tài khoản.')
                 return redirect('account')
 
-        # Hiển thị danh sách nhân viên
+        # Hiển thị danh sách tài khoản
         accounts = Taikhoan.objects.all()
         return render(request, 'admin/account.html', {'accounts': accounts})
 
     elif request.method == 'POST':
         action = request.POST.get('action')
-        if action == "insertAcc":
-            username = request.POST.get('username')
-            password = request.POST.get('password')
-            role = request.POST.get('role')
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        role = request.POST.get('role')
 
-            idaccount= f"TK-{str(uuid.uuid4())[:5]}"
+        if len(password) < 8:
+            messages.error(request, 'Mật khẩu phải có ít nhất 8 ký tự.')
+            return redirect('account')
+
+        if action == "insertAcc":
+            idaccount = f"TK-{str(uuid.uuid4())[:5]}"
             hashed_password = make_password(password)
-            
+
             Taikhoan.objects.create(
                 idtaikhoan=idaccount,
                 username=username,
@@ -1354,15 +1390,13 @@ def account(request, idtaikhoan=None):
 
         elif action == "editAcc" and idtaikhoan:
             try:
-                taikhoan = get_object_or_404(Taikhoan, idtaikhoan=idtaikhoan)
-                taikhoan.tennhanvien = request.POST.get('username')
-                taikhoan.email = request.POST.get('password')
-                taikhoan.role = request.POST.get('role')
+                taikhoan = Taikhoan.objects.get(idtaikhoan=idtaikhoan)
+                taikhoan.username = username
+                if password:
+                    taikhoan.password = make_password(password)
+                taikhoan.role = role
                 taikhoan.save()
                 messages.success(request, 'Thông tin tài khoản đã được cập nhật thành công.')
-                return redirect('account')
-            except Nhanvien.DoesNotExist:
-                messages.error(request, 'Không tìm thấy nhân viên.')
                 return redirect('account')
             except Taikhoan.DoesNotExist:
                 messages.error(request, 'Không tìm thấy tài khoản.')
@@ -1373,9 +1407,11 @@ def account(request, idtaikhoan=None):
 
 
 
+
 def nguoidung(request, manguoidung=None):
     if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
         return redirect('/login/') 
+
     if request.method == 'GET':
         url = request.GET.get('url')
         if url == "deleteND" and manguoidung:
@@ -1390,19 +1426,22 @@ def nguoidung(request, manguoidung=None):
 
         # Hiển thị danh sách người dùng
         users = Nguoidung.objects.all()
-        taikhoans = Taikhoan.objects.filter(role__in=['customer'])
-
+        taikhoans = Taikhoan.objects.filter(role='customer')
         return render(request, 'admin/nguoidung.html', {'users': users, 'taikhoans': taikhoans})
 
     elif request.method == 'POST':
         action = request.POST.get('action')
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        address = request.POST.get('address')
+        accountId = request.POST.get('accountId')
+        image = request.FILES.get('Image')  # Lấy dữ liệu tệp tin ảnh từ request.FILES
+
         if action == "insertND":
-            name = request.POST.get('name')
-            email = request.POST.get('email')
-            phone = request.POST.get('phone')
-            address = request.POST.get('address')
-            accountId = request.POST.get('accountId')
-            image = request.FILES.get('Image')  # Lấy dữ liệu tệp tin ảnh từ request.FILES
+            if Nguoidung.objects.filter(email=email).exists():
+                messages.error(request, 'Email đã tồn tại.')
+                return redirect('nguoidung')
 
             try:
                 taikhoan_instance = Taikhoan.objects.get(idtaikhoan=accountId)
@@ -1427,10 +1466,16 @@ def nguoidung(request, manguoidung=None):
             try:
                 nguoidung = get_object_or_404(Nguoidung, manguoidung=manguoidung)
                 taikhoan_instance = get_object_or_404(Taikhoan, idtaikhoan=request.POST.get('accountId'))
-                nguoidung.hovaten = request.POST.get('name')
-                nguoidung.email = request.POST.get('email')
-                nguoidung.phone = request.POST.get('phone')
-                nguoidung.diachi = request.POST.get('address')
+
+                # Kiểm tra email đã tồn tại hay chưa, ngoại trừ người dùng hiện tại
+                if Nguoidung.objects.filter(email=email).exclude(manguoidung=manguoidung).exists():
+                    messages.error(request, 'Email đã tồn tại.')
+                    return redirect('nguoidung')
+
+                nguoidung.hovaten = name
+                nguoidung.email = email
+                nguoidung.phone = phone
+                nguoidung.diachi = address
                 
                 # Xử lý chỉnh sửa ảnh nếu có tệp tin mới được tải lên
                 new_image = request.FILES.get('Image')
@@ -1449,6 +1494,7 @@ def nguoidung(request, manguoidung=None):
                 return redirect('nguoidung')
 
     return redirect('nguoidung')
+
 
 def profileManage(request):
     if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
@@ -1517,25 +1563,39 @@ def profileManage(request):
 
 
 
+from django.db.models import Sum, Count
+from django.db.models.functions import TruncDate
+
 def dashboard(request):
-        tong_so_don_hang = Donhang.objects.count()
+    # Tính tổng số đơn hàng đã nhận hàng
+    tong_so_don_hang = Donhang.objects.filter(trangthai='Đã nhận hàng').count()
 
-        tong_doanh_thu = Donhang.objects.aggregate(Sum('tonggia'))['tonggia__sum']
+    # Tính tổng doanh thu từ các đơn hàng đã nhận hàng
+    tong_doanh_thu = Donhang.objects.filter(trangthai='Đã nhận hàng').aggregate(total_doanh_thu=Sum('tonggia'))['total_doanh_thu']
 
-        chi_tiet_don_hang = DonHangDetail.objects.all()
-        top_san_pham = DonHangDetail.objects.values('id_nongsan__ten').annotate(total_quantity=Sum('quantity')).order_by('-total_quantity')[:10]
-        doanh_thu_ngay = Donhang.objects.annotate(ngay=TruncDate('ngaydat')).values('ngay').annotate(total_doanh_thu=Sum('tonggia')).order_by('ngay')
-        tong_khach_hang = Nguoidung.objects.count()
-        context = {
+    # Lấy chi tiết các đơn hàng
+    chi_tiet_don_hang = DonHangDetail.objects.all()
+
+    # Tính top sản phẩm bán chạy nhất (theo số lượng)
+    top_san_pham = DonHangDetail.objects.values('id_nongsan__ten').annotate(total_quantity=Sum('quantity')).order_by('-total_quantity')[:10]
+
+    # Tính doanh thu theo từng ngày
+    doanh_thu_ngay = Donhang.objects.filter(trangthai='Đã nhận hàng').annotate(ngay=TruncDate('ngaydat')).values('ngay').annotate(total_doanh_thu=Sum('tonggia')).order_by('ngay')
+
+    # Tính tổng số khách hàng
+    tong_khach_hang = Nguoidung.objects.count()
+
+    context = {
         'tong_so_don_hang': tong_so_don_hang,
         'tong_doanh_thu': tong_doanh_thu,
         'chi_tiet_don_hang': chi_tiet_don_hang,
         'top_san_pham': top_san_pham,
-         'doanh_thu_ngay': doanh_thu_ngay,
-         'tong_khach_hang':tong_khach_hang
-        }
+        'doanh_thu_ngay': doanh_thu_ngay,
+        'tong_khach_hang': tong_khach_hang
+    }
 
-        return render(request, 'admin/adminpage.html',context)
+    return render(request, 'admin/adminpage.html', context)
+
     
 
 def danhmuc(request,id_danhmuc=None):
@@ -1586,3 +1646,40 @@ def danhmuc(request,id_danhmuc=None):
                 messages.error(request, 'Không tìm thấy danh mục.')
                 return redirect('danhmuc')
     return render(request, 'admin/danhmuc.html')
+
+
+def order_received(request, order_id):
+    user_id = request.session.get('manguoidung')
+    
+    if not user_id:
+        return redirect('login')  # Nếu người dùng chưa đăng nhập, điều hướng đến trang đăng nhập
+    
+    try:
+        order = get_object_or_404(Donhang, pk=order_id, manguoidung=user_id)
+        order.trangthai = 'Đã nhận hàng'  # Hoặc giá trị tương ứng với trạng thái "Đã nhận hàng"
+        order.save()
+        return redirect('order_history')  # Hoặc trang bạn muốn chuyển hướng sau khi cập nhật
+    
+    except Donhang.DoesNotExist:
+        return redirect('order_history')  # Nếu đơn hàng không tồn tại, điều hướng về trang lịch sử đơn hàng
+
+    except Nguoidung.DoesNotExist:
+        return redirect('login') 
+    
+def cancel_order(request, madonhang):
+    if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
+        return redirect('/login/') 
+
+    try:
+        donhang_instance = get_object_or_404(Donhang, madonhang=madonhang)
+        if donhang_instance.trangthai == "Pending":
+            donhang_instance.trangthai = "Bị Huỷ"
+            donhang_instance.save()
+            messages.success(request, 'Đơn hàng đã được hủy thành công.')
+        else:
+            messages.error(request, 'Không thể hủy đơn hàng không ở trạng thái Pending.')
+    except Donhang.DoesNotExist:
+        messages.error(request, 'Không tìm thấy đơn hàng.')
+    except Nguoidung.DoesNotExist:
+        return redirect('login') 
+    return redirect('order-history')

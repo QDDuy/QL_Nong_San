@@ -59,40 +59,51 @@
             <th scope="col">Ngày mua</th>
             <th scope="col">Trạng thái</th>
             <th scope="col">Sản phẩm</th>
+            <th scope="col">Action</th>
            
           </tr>
         </thead>
         <tbody>
           {% if orders %}
-  {% for order in orders %}
-    <tr>
-      <td>{{ order.madonhang }}</td>
-      <td>{{ order.tonggia }}</td>
-      <td>{{ order.ngaydat }}</td>
-      <td>{{ order.trangthai }}</td>
-      <td>
-        <ul>
-          {% for detail in order.donhangdetail_set.all %}
-            <li>
-              <strong>Product:</strong> {{ detail.id_nongsan.ten }} <br>
-              <strong>Quantity:</strong> {{ detail.quantity }} <br>
-              <strong>Price:</strong> {{ detail.id_nongsan.gia }} <br>
-              {% if detail.id_nongsan.image %}
+            {% for order in orders %}
+              <tr>
+                <td>{{ order.madonhang }}</td>
+                <td>{{ order.tonggia }}</td>
+                <td>{{ order.ngaydat }}</td>
+                <td>{{ order.trangthai }}</td>
+                <td>
+                  <ul>
+                    {% for detail in order.donhangdetail_set.all %}
+                      <li>
+                        <strong>Product:</strong> {{ detail.id_nongsan.ten }} <br>
+                        <strong>Quantity:</strong> {{ detail.quantity }} <br>
+                        <strong>Price:</strong> {{ detail.id_nongsan.gia }} <br>
+                        {% if detail.id_nongsan.image %}
+                          <img src="{{ detail.id_nongsan.image.url }}" alt="{{ detail.id_nongsan.ten }}" width="100"> <br>
+                        {% endif %}
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </td>
+                <td>
+                  {% if order.trangthai == "Pending" or order.trangthai == "Đã nhận hàng" or order.trangthai == "Bị huỷ" %}
+                    <button class="btn btn-success" hidden>Đã nhận hàng</button>
+                  {% else %}
+                    <a href="{% url 'order_received' order.madonhang %}" class="btn btn-primary">Đã nhận hàng</a>
+                    
+                  {% endif %}
+                  {% if order.trangthai == "Pending" %}
+                    <a href="{% url 'cancel_order' order.madonhang %}" class="btn btn-danger">Hủy đơn</a>
+                  {% endif %}
+                </td>
                 
-                <img src="{{ detail.id_nongsan.image.url }}" alt="{{ detail.id_nongsan.ten }}" width="100"> <br>
-              {% endif %}
-            </li>
-          {% endfor %}
-        </ul>
-      </td>
-    </tr>
-  {% endfor %}
-{% else %}
-  <tr>
-    <td colspan="5">No orders found.</td>
-  </tr>
-{% endif %}
-
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="6">No orders found.</td>
+            </tr>
+          {% endif %}
         </tbody>
       </table>
     </div>
@@ -100,4 +111,4 @@
 </div>
 <!-- Cart Page End -->
 
-{% include "user/footer.html"%}
+{% include "user/footer.html" %}

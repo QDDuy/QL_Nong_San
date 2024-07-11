@@ -1,229 +1,216 @@
-{%load static%}
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>Quản lý tài khoản</title>
-    <meta
-      content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
-      name="viewport"
-    />
-    <link
-      rel="icon"
-      href="{%static ''%}img/kaiadmin/favicon.ico"
-      type="image/x-icon"
-    />
+    <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+    <link rel="icon" href="{% static 'img/kaiadmin/favicon.ico' %}" type="image/x-icon" />
 
     <!-- Fonts and icons -->
-    <script src="{%static 'admin/assets/js/plugin/webfont/webfont.min.js'%}"></script>
+    <script src="{% static 'admin/assets/js/plugin/webfont/webfont.min.js' %}"></script>
     <script>
-      WebFont.load({
-        google: { families: ["Public Sans:300,400,500,600,700"] },
-        custom: {
-          families: [
-            "Font Awesome 5 Solid",
-            "Font Awesome 5 Regular",
-            "Font Awesome 5 Brands",
-            "simple-line-icons",
-          ],
-          urls: ["{%static 'admin/assets/css/fonts.min.css'%}"],
-        },
-        active: function () {
-          sessionStorage.fonts = true;
-        },
-      });
+        WebFont.load({
+            google: { families: ["Public Sans:300,400,500,600,700"] },
+            custom: {
+                families: [
+                    "Font Awesome 5 Solid",
+                    "Font Awesome 5 Regular",
+                    "Font Awesome 5 Brands",
+                    "simple-line-icons",
+                ],
+                urls: ["{% static 'admin/assets/css/fonts.min.css' %}"],
+            },
+            active: function () {
+                sessionStorage.fonts = true;
+            },
+        });
     </script>
 
     <!-- CSS Files -->
-    <link rel="stylesheet" href="{%static 'admin/assets/css/bootstrap.min.css'%}" />
-    <link rel="stylesheet" href="{%static 'admin/assets/css/plugins.min.css'%}" />
-    <link rel="stylesheet" href="{%static 'admin/assets/css/kaiadmin.min.css'%}" />
+    <link rel="stylesheet" href="{% static 'admin/assets/css/bootstrap.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'admin/assets/css/plugins.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'admin/assets/css/kaiadmin.min.css' %}" />
 
     <!-- CSS Just for demo purpose, don't include it in your project -->
-    <link rel="stylesheet" href="{%static 'admin/assets/css/demo.css'%}" />
-  </head>
-  <body>
-    <div class="wrapper">
-      {%include 'admin/sidebar.html'%}
-   
-      <div class="main-panel">
+    <link rel="stylesheet" href="{% static 'admin/assets/css/demo.css' %}" />
+</head>
+<body>
+<div class="wrapper">
+    {% include 'admin/sidebar.html' %}
+
+    <div class="main-panel">
         <div class="main-header">
-          <div class="main-header-logo">
-            <!-- Logo Header -->
-            <div class="logo-header" data-background-color="dark">
-              <a href="../index.html" class="logo">
-                <img
-                  src="{%static 'admin/assets/img/kaiadmin/logo_light.svg'%}"
-                  alt="navbar brand"
-                  class="navbar-brand"
-                  height="20"
-                />
-              </a>
-              <div class="nav-toggle">
-                <button class="btn btn-toggle toggle-sidebar">
-                  <i class="gg-menu-right"></i>
-                </button>
-                <button class="btn btn-toggle sidenav-toggler">
-                  <i class="gg-menu-left"></i>
-                </button>
-              </div>
-              <button class="topbar-toggler more">
-                <i class="gg-more-vertical-alt"></i>
-              </button>
+            <div class="main-header-logo">
+                <!-- Logo Header -->
+                <div class="logo-header" data-background-color="dark">
+                    <a href="../index.html" class="logo">
+                        <img src="{% static 'admin/assets/img/kaiadmin/logo_light.svg' %}" alt="navbar brand" class="navbar-brand" height="20" />
+                    </a>
+                    <div class="nav-toggle">
+                        <button class="btn btn-toggle toggle-sidebar">
+                            <i class="gg-menu-right"></i>
+                        </button>
+                        <button class="btn btn-toggle sidenav-toggler">
+                            <i class="gg-menu-left"></i>
+                        </button>
+                    </div>
+                    <button class="topbar-toggler more">
+                        <i class="gg-more-vertical-alt"></i>
+                    </button>
+                </div>
+                <!-- End Logo Header -->
             </div>
-            <!-- End Logo Header -->
-          </div>
-          {%include 'admin/navbar.html' %}
+            {% include 'admin/navbar.html' %}
         </div>
-      
+
         <div class="container">
-          <div class="page-inner">
-            <div class="row">
-              <div class="col-md-12">
-                <div class="card">
-                  <div class="card-header">
-                    <div class="d-flex align-items-center">
-                      <h4 class="card-title">Danh sách tài khoản</h4>
-                      <button class="btn btn-primary btn-round ms-auto" data-bs-toggle="modal" data-bs-target="#addRowModal">
-                        <i class="fa fa-plus"></i> Thêm tài khoản
-                      </button>
-                    </div>
-                  </div>
-                  <div class="card-body">
-                    <!-- Modal -->
-                    <div class="modal fade" id="addRowModal" tabindex="-1" role="dialog" aria-hidden="true">
-                      <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                          <div class="modal-header border-0">
-                            <h5 class="modal-title">
-                              <span class="fw-mediumbold">Thêm</span>
-                              <span class="fw-light"> Tài Khoản </span>
-                            </h5>
-                          </div>
-                          <form method="post" action="{% url 'account' %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="insertAcc" />
-                            <div class="modal-body">
-                              <p class="small">Nhập thông tin để thêm tài khoản mới</p>
-                              <div class="form-group form-group-default">
-                                <label>User Name</label>
-                                <input type="text" class="form-control" placeholder="User Name" name="username" required />
-                              </div>
-                              <div class="form-group form-group-default">
-                                <label>Password</label>
-                                <input type="text" class="form-control" placeholder="Password" name="password" required />
-                              </div>
-                              <div class="form-group form-group-default">
-                                <label>Role</label>
-                                <select class="form-select"name="role" required>
-                                  <option value="admin">Admin</option>
-                                    <option value="employee">Employee</option>
-                                    <option value="customer">Customer</option>
-                                </select>
-                              </div>
+            <div class="page-inner">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="d-flex align-items-center">
+                                    <h4 class="card-title">Danh sách tài khoản</h4>
+                                    <button class="btn btn-primary btn-round ms-auto" data-bs-toggle="modal" data-bs-target="#addRowModal">
+                                        <i class="fa fa-plus"></i> Thêm tài khoản
+                                    </button>
+                                </div>
                             </div>
-                            <div class="modal-footer border-0">
-                              <button type="submit" class="btn btn-primary">Thêm</button>
-                            </div>
-                          </form>
-                        </div>
-                      </div>
-                    </div>
-        
-                    <div class="table-responsive">
-                      <table id="add-row" class="display table table-striped table-hover">
-                        <thead>
-                          <tr>
-                            <th>ID tài khoản</th>
-                            <th>User Name</th>
-                            <th>Password</th>
-                            <th>Role</th>
-                            <th>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {% for account in accounts %}
-                          <tr>
-                            <td>{{ account.idtaikhoan }}</td>
-                            <td>{{ account.username }}</td>
-                            <td>{{ account.password }}</td>
-                            <td>{{ account.role }}</td>
-                            <td>
-                              <div class="form-button-action">
-                                <form action="{% url 'account_detail' idtaikhoan=account.idtaikhoan %}" method="get" style="display:inline;">
-                                  <input type="hidden" name="url" value="deleteAcc" />
-                                  <button type="submit" class="btn btn-link btn-danger" data-bs-toggle="tooltip" title="Xóa">
-                                      <i class="fa fa-times"></i>
-                                  </button>
-                              </form>
-                                <button type="button" title="Sửa thông tin" class="btn btn-link btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#editNhanvien{{ nhanvien.manhanvien }}">
-                                  <i class="fa fa-edit"></i>
-                                </button>
-                                <div class="modal fade" id="editNhanvien{{ nhanvien.manhanvien }}" tabindex="-1" role="dialog" aria-hidden="true">
-                                  <div class="modal-dialog" role="document">
-                                    <div class="modal-content">
-                                      <div class="modal-header border-0">
-                                        <h5 class="modal-title">
-                                          <span class="fw-mediumbold">Chỉnh sửa</span>
-                                          <span class="fw-light">Nhân viên</span>
-                                        </h5>
-                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                          <span aria-hidden="true">&times;</span>
-                                        </button>
-                                      </div>
-                                      <form method="post" action="{% url 'account_detail' idtaikhoan=account.idtaikhoan %}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="action" value="editAcc" />
-                                        <div class="modal-body">
-                                            <p class="small">Chỉnh sửa thông tin tài khoản</p>
-                                            <div class="row">
-                                                <div class="col-sm-12">
+                            <div class="card-body">
+                                <!-- Modal -->
+                                <div class="modal fade" id="addRowModal" tabindex="-1" role="dialog" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header border-0">
+                                                <h5 class="modal-title">
+                                                    <span class="fw-mediumbold">Thêm</span>
+                                                    <span class="fw-light"> Tài Khoản </span>
+                                                </h5>
+                                            </div>
+                                            <form method="post" action="{% url 'account' %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="insertAcc" />
+                                                <div class="modal-body">
+                                                    <p class="small">Nhập thông tin để thêm tài khoản mới</p>
                                                     <div class="form-group form-group-default">
                                                         <label>User Name</label>
-                                                        <input type="text" class="form-control" name="name" value="{{ account.username }}" />
+                                                        <input type="text" class="form-control" placeholder="User Name" name="username" required />
                                                     </div>
                                                     <div class="form-group form-group-default">
                                                         <label>Password</label>
-                                                        <input type="text" class="form-control" name="email" value="{{ account.password }}" />
+                                                        <input type="text" class="form-control" placeholder="Password" name="password" required />
                                                     </div>
-                                                
                                                     <div class="form-group form-group-default">
                                                         <label>Role</label>
-                                                        <select class="form-control" name="role">
-                                                            <option value="admin" {% if account.role == "admin" %}selected{% endif %}>Admin</option>
-                                                            <option value="employee" {% if account.role  == "employee" %}selected{% endif %}>Employee</option>
-                                                            <option value="rolcustomere" {% if account.role  == "customer" %}selected{% endif %}>Customer</option>
+                                                        <select class="form-select" name="role" required>
+                                                            <option value="admin">Admin</option>
+                                                            <option value="employee">Employee</option>
+                                                            <option value="customer">Customer</option>
                                                         </select>
                                                     </div>
-                                                   
                                                 </div>
-                                            </div>
+                                                <div class="modal-footer border-0">
+                                                    <button type="submit" class="btn btn-primary">Thêm</button>
+                                                </div>
+                                            </form>
                                         </div>
-                                        <div class="modal-footer border-0">
-                                            <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
-                                        </div>
-                                    </form>
                                     </div>
-                                  </div>
                                 </div>
-                              </div>
-                            </td>
-                          </tr>
-                          {% empty %}
-                          <tr>
-                            <td colspan="9">Không có nhân viên nào.</td>
-                          </tr>
-                          {% endfor %}
-                        </tbody>
-                      </table>
+
+                                <div class="table-responsive">
+                                    <table id="add-row" class="display table table-striped table-hover">
+                                        <thead>
+                                        <tr>
+                                            <th>ID tài khoản</th>
+                                            <th>User Name</th>
+                                            <th>Password</th>
+                                            <th>Role</th>
+                                            <th>Action</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for account in accounts %}
+                                        <tr>
+                                            <td>{{ account.idtaikhoan }}</td>
+                                            <td>{{ account.username }}</td>
+                                            <td>{{ account.password }}</td>
+                                            <td>{{ account.role }}</td>
+                                            <td>
+                                                <div class="form-button-action">
+                                                    <form action="{% url 'account_detail' idtaikhoan=account.idtaikhoan %}" method="get" style="display:inline;">
+                                                        <input type="hidden" name="url" value="deleteAcc" />
+                                                        <button type="submit" class="btn btn-link btn-danger" data-bs-toggle="tooltip" title="Xóa">
+                                                            <i class="fa fa-times"></i>
+                                                        </button>
+                                                    </form>
+                                                    <button type="button" title="Sửa thông tin" class="btn btn-link btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#editTaikhoan{{ account.idtaikhoan }}">
+                                                        <i class="fa fa-edit"></i>
+                                                    </button>
+                                                    <div class="modal fade" id="editTaikhoan{{ account.idtaikhoan }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                                        <div class="modal-dialog" role="document">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header border-0">
+                                                                    <h5 class="modal-title">
+                                                                        <span class="fw-mediumbold">Chỉnh sửa</span>
+                                                                        <span class="fw-light">Tài khoản</span>
+                                                                    </h5>
+                                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                        <span aria-hidden="true">&times;</span>
+                                                                    </button>
+                                                                </div>
+                                                                <form method="post" action="{% url 'account_detail' idtaikhoan=account.idtaikhoan %}">
+                                                                    {% csrf_token %}
+                                                                    <input type="hidden" name="action" value="editAcc" />
+                                                                    <div class="modal-body">
+                                                                        <p class="small">Chỉnh sửa thông tin tài khoản</p>
+                                                                        <div class="form-group form-group-default">
+                                                                            <label>User Name</label>
+                                                                            <input type="text" class="form-control" name="username" value="{{ account.username }}" />
+                                                                        </div>
+                                                                        <div class="form-group form-group-default">
+                                                                            <label>Password</label>
+                                                                            <input type="text" class="form-control" name="password" value="{{ account.password }}" />
+                                                                        </div>
+                                                                        <div class="form-group form-group-default">
+                                                                            <label>Role</label>
+                                                                            <select class="form-control" name="role">
+                                                                                <option value="admin" {% if account.role == "admin" %}selected{% endif %}>Admin</option>
+                                                                                <option value="employee" {% if account.role == "employee" %}selected{% endif %}>Employee</option>
+                                                                                <option value="customer" {% if account.role == "customer" %}selected{% endif %}>Customer</option>
+                                                                            </select>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="modal-footer border-0">
+                                                                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                                                                    </div>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="5">Không có tài khoản nào.</td>
+                                        </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                  </div>
                 </div>
-              </div>
             </div>
-          </div>
         </div>
-        
-  {%include 'admin/footer.html'%}
-  </body>
+
+        {% include 'admin/footer.html' %}
+    </div>
+</div>
+
+
+</body>
 </html>

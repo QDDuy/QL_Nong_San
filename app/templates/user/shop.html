@@ -40,17 +40,12 @@
           <div class="bg-light ps-3 py-3 rounded d-flex justify-content-between mb-4">
             <label for="fruits">Default Sorting:</label>
             <form id="filterForm" method="get" action="{% url 'shop' %}">
-              <select
-                id="fruits"
-                name="sort_by_price"
-                class="border-0 form-select-sm bg-light me-3"
-                form="fruitform"
-              >
+              <select name="sort_by_price" class="border-0 form-select-sm bg-light me-3">
                 <option value="">Sắp xếp theo giá</option>
-                <option value="ascending">Giá thấp đến cao</option>
-                <option value="descending">Giá cao đến thấp</option>
-              </select>
-            </form>
+                <option value="ascending" {% if sort_by_price == 'ascending' %}selected{% endif %}>Giá thấp đến cao</option>
+                <option value="descending" {% if sort_by_price == 'descending' %}selected{% endif %}>Giá cao đến thấp</option>
+            </select>
+          </form>
           </div>
         </div>
       </div>
@@ -147,5 +142,15 @@
       document.getElementById('filterForm').submit();
     });
   });
+
+  // lọc sản phẩm
+  document.addEventListener('DOMContentLoaded', function () {
+    const selectElements = document.querySelectorAll('#filterForm select');
+    selectElements.forEach(function (element) {
+        element.addEventListener('change', function () {
+            document.getElementById('filterForm').submit();
+        });
+    });
+});
   </script>
 {% include "user/footer.html" %}

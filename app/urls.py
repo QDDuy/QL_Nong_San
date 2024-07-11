@@ -46,5 +46,7 @@ urlpatterns = [
     path('shop-detail/<str:product_id>/', views.shop_detail, name='shop-detail'),
     path('danhmuc/', views.danhmuc, name="danhmuc"),
     path('danhmuc/<str:id_danhmuc>/', views.danhmuc, name="danhmuc-detail"),
-    
+    path('order_received/<str:order_id>/', views.order_received, name='order_received'),
+    path('cancel_order/<str:madonhang>/', views.cancel_order, name='cancel_order'),
+    path('doanh-thu-ngay/', views.doanh_thu_theo_ngay, name='doanh_thu_ngay'),
 ]

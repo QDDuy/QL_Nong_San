@@ -110,6 +110,8 @@
                                                         <select class="form-control" name="trangthai" required>
                                                             <option value="Pending">Pending</option>
                                                             <option value="Completed">Completed</option>
+                                                            <option value="Đã nhận hàng">Đã nhận hàng</option>
+                                                            <option value="Bị huỷ">Bị huỷ</option>
                                                         </select>
                                                     </div>
                                                     
@@ -197,6 +199,8 @@
                                                                                             <select class="form-control" name="trangthai">
                                                                                                 <option value="Pending" {% if donhang.trangthai == "Pending" %}selected{% endif %}>Pending</option>
                                                                                                 <option value="Completed" {% if donhang.trangthai == "Completed" %}selected{% endif %}>Completed</option>
+                                                                                                <option value="Đã nhận hàng" {% if donhang.trangthai == "Đã nhận hàng" %}selected{% endif %}>Đã nhận hàng</option>
+                                                                                                <option value="Bị huỷ" {% if donhang.trangthai == "Bị huỷ" %}selected{% endif %}>Bị huỷ</option>
                                                                                             </select>
                                                                                         </div>
                                                                                     </div>
@@ -229,19 +233,6 @@
             </div>
         </div>
         
-        <!-- JS Files -->
-        <script src="{% static 'admin/assets/js/bootstrap.bundle.min.js' %}"></script>
-        <script src="{% static 'admin/assets/js/Plugins/init-scripts.js' %}"></script>
-        <script src="{% static 'admin/assets/js/plugins/choices.min.js' %}"></script>
-        <script src="{% static 'admin/assets/js/plugins/croppie.min.js' %}"></script>
-        <script src="{% static 'admin/assets/js/plugins/datatables.min.js' %}"></script>
-        <script src="{% static 'admin/assets/js/plugins/fullcalendar.min.js' %}"></script>
-        <script src="{% static 'admin/assets/js/plugins/moment.min.js' %}"></script>
-        <script src="{% static 'admin/assets/js/plugins/progressbar.min.js' %}"></script>
-        <script src="{% static 'admin/assets/js/plugins/select2.min.js' %}"></script>
-        <script src="{% static 'admin/assets/js/plugins/sweetalert2.min.js' %}"></script>
-        <script src="{% static 'admin/assets/js/plugins/tooltip.min.js' %}"></script>
-        <script src="{% static 'admin/assets/js/kaiadmin.min.js' %}"></script>
         </body>
         </html>
         
