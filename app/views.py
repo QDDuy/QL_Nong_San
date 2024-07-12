@@ -943,6 +943,7 @@ def order(request, madonhang=None):
 def donhangdetail(request, ma_donhang_detail=None):
     if request.session.get('user_role') != 'admin' and request.session.get('user_role') != 'employee':
         return redirect('/login/') 
+
     if request.method == 'GET':
         url = request.GET.get('action')
         if url == "deleteDHDT" and ma_donhang_detail:
@@ -962,10 +963,13 @@ def donhangdetail(request, ma_donhang_detail=None):
 
     elif request.method == 'POST':
         action = request.POST.get('action')
+        print("Action:", action)  # Kiểm tra giá trị của action
         if action == "insertCTDH":
             ma_donhang = request.POST.get('ma_donhang')
             id_nongsan = request.POST.get('id_nongsan')
             quantity = int(request.POST.get('quantity'))
+
+            print("InsertCTDH:", ma_donhang, id_nongsan, quantity)  # Kiểm tra giá trị của các biến
 
             try:
                 donhang_instance = Donhang.objects.get(madonhang=ma_donhang)
@@ -987,6 +991,33 @@ def donhangdetail(request, ma_donhang_detail=None):
 
             except Donhang.DoesNotExist:
                 messages.error(request, 'Không tìm thấy đơn hàng.')
+            except Nongsan.DoesNotExist:
+                messages.error(request, 'Không tìm thấy nông sản.')
+        
+        elif action == "editCTDH":
+            ma_donhang_detail = request.POST.get('ma_donhang_detail')
+            id_nongsan = request.POST.get('id_nongsan')
+            quantity = int(request.POST.get('quantity'))
+
+            print("EditCTDH:", ma_donhang_detail, id_nongsan, quantity)  # Kiểm tra giá trị của các biến
+
+            try:
+                donhang_detail_instance = DonHangDetail.objects.get(ma_donhang_detail=ma_donhang_detail)
+                print("Found DonHangDetail instance")  # Kiểm tra xem có tìm thấy instance hay không
+                nongsan_instance = Nongsan.objects.get(idnongsan=id_nongsan)
+                tonkho_instances = Tonkho.objects.filter(idnongsan=id_nongsan)
+
+                total_stock = sum(tk.soluong for tk in tonkho_instances)
+                if total_stock < quantity:
+                    messages.error(request, 'Số lượng tồn kho không đủ.')
+                else:
+                    donhang_detail_instance.id_nongsan = nongsan_instance
+                    donhang_detail_instance.quantity = quantity
+                    donhang_detail_instance.save()
+                    messages.success(request, 'Chi tiết đơn hàng đã được cập nhật thành công.')
+
+            except DonHangDetail.DoesNotExist:
+                messages.error(request, 'Không tìm thấy chi tiết đơn hàng.')
             except Nongsan.DoesNotExist:
                 messages.error(request, 'Không tìm thấy nông sản.')
 
@@ -1543,7 +1574,9 @@ def profileManage(request):
         current_password = request.POST.get('current_password')
         new_password = request.POST.get('new_password')
         confirm_password = request.POST.get('confirm_password')
-
+        if len(new_password) < 8:
+            messages.error(request, 'Mật khẩu mới phải có ít nhất 8 ký tự.')
+            return render(request, 'admin/profileManage.html')
         try:
             account = Taikhoan.objects.get(idtaikhoan=idtaikhoan)
             if check_password(current_password, account.password):

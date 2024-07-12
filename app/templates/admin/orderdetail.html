@@ -169,6 +169,7 @@
                                                                     <form method="post" action="{% url 'donhangdetail_detail' donhangdetail.ma_donhang_detail %}">
                                                                         {% csrf_token %}
                                                                         <input type="hidden" name="action" value="editCTDH" />
+                                                                        <input type="hidden" name="ma_donhang_detail" value="{{ donhangdetail.ma_donhang_detail }}" />
                                                                         <div class="modal-body">
                                                                             <p class="small">Chỉnh sửa thông tin chi tiết đơn hàng</p>
                                                                             <div class="row">
@@ -177,9 +178,9 @@
                                                                                         <label>Mã đơn hàng</label>
                                                                                         <select class="form-control" name="ma_donhang">
                                                                                             {% for donhang in donhangs %}
-                                                                                            <option value="{{ donhang.madonhang }}" {% if donhangdetail.ma_donhang.madonhang == donhang.madonhang %}selected{% endif %}>
-                                                                                                {{ donhang.madonhang }}
-                                                                                            </option>
+                                                                                                <option value="{{ donhang.madonhang }}" {% if donhangdetail.ma_donhang.madonhang == donhang.madonhang %}selected{% endif %}>
+                                                                                                    {{ donhang.madonhang }}
+                                                                                                </option>
                                                                                             {% endfor %}
                                                                                         </select>
                                                                                     </div>
@@ -187,23 +188,24 @@
                                                                                         <label>Mã nông sản</label>
                                                                                         <select class="form-control" name="id_nongsan">
                                                                                             {% for nongsan in nongsans %}
-                                                                                            <option value="{{ nongsan.idnongsan }}" {% if donhangdetail.id_nongsan.idnongsan == nongsan.idnongsan %}selected{% endif %}>
-                                                                                                {{ nongsan.ten }}
-                                                                                              </option>
-                                                                                              {% endfor %}
-                                                                                          </select>
-                                                                                      </div>
-                                                                                      <div class="form-group form-group-default">
-                                                                                          <label>Số lượng</label>
-                                                                                          <input type="number" class="form-control" name="quantity" value="{{ donhangdetail.quantity }}" />
-                                                                                      </div>
-                                                                                  </div>
-                                                                              </div>
-                                                                          </div>
-                                                                          <div class="modal-footer border-0">
-                                                                              <button type="submit" class="btn btn-primary">Lưu</button>
-                                                                          </div>
-                                                                      </form>
+                                                                                                <option value="{{ nongsan.idnongsan }}" {% if donhangdetail.id_nongsan.idnongsan == nongsan.idnongsan %}selected{% endif %}>
+                                                                                                    {{ nongsan.ten }}
+                                                                                                </option>
+                                                                                            {% endfor %}
+                                                                                        </select>
+                                                                                    </div>
+                                                                                    <div class="form-group form-group-default">
+                                                                                        <label>Số lượng</label>
+                                                                                        <input type="number" class="form-control" name="quantity" value="{{ donhangdetail.quantity }}" />
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="modal-footer border-0">
+                                                                            <button type="submit" class="btn btn-primary">Lưu</button>
+                                                                        </div>
+                                                                    </form>
+                                                                    
                                                                   </div>
                                                               </div>
                                                           </div>

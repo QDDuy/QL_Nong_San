@@ -1,5 +1,66 @@
 {% include "user/header.html" %} {% load static %}
+{% load humanize %}
+<style type="text/css">
 
+  body {
+    font-family: 'Arial', sans-serif;
+  }
+  
+  .container-fluid {
+    background-color: #f8f9fa;
+  }
+  
+  .card {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .card-header {
+    background-color: #679d06;
+    color: #ffffff;
+    border-bottom: none;
+    font-weight: bold;
+  }
+  
+  .card-body {
+    background-color: #ffffff;
+  }
+  
+  .list-group-item {
+    border: none;
+    padding: 10px 20px;
+    background-color: #f8f9fa;
+  }
+  
+  .img-thumbnail {
+    border: none;
+  }
+  
+  .btn-success {
+    background-color: #28a745;
+    border: none;
+  }
+  
+  .btn-danger {
+    background-color: #dc3545;
+    border: none;
+  }
+  
+  .btn-primary {
+    background-color: #007bff;
+    border: none;
+  }
+  
+  .badge-light {
+    background-color: #ffffff;
+    color: #007bff;
+  }
+  
+  .alert {
+    margin-top: 20px;
+  }
+   
+</style>
 <!-- Modal Search Start -->
 <div
   class="modal fade"
@@ -50,65 +111,60 @@
 <!-- Cart Page Start -->
 <div class="container-fluid py-5">
   <div class="container py-5">
-    <div class="table-responsive">
-      <table class="table">
-        <thead>
-          <tr>
-            <th scope="col">Mã đơn hàng</th>
-            <th scope="col">Thành tiền</th>
-            <th scope="col">Ngày mua</th>
-            <th scope="col">Trạng thái</th>
-            <th scope="col">Sản phẩm</th>
-            <th scope="col">Action</th>
-           
-          </tr>
-        </thead>
-        <tbody>
-          {% if orders %}
-            {% for order in orders %}
-              <tr>
-                <td>{{ order.madonhang }}</td>
-                <td>{{ order.tonggia }}</td>
-                <td>{{ order.ngaydat }}</td>
-                <td>{{ order.trangthai }}</td>
-                <td>
-                  <ul>
-                    {% for detail in order.donhangdetail_set.all %}
-                      <li>
-                        <strong>Product:</strong> {{ detail.id_nongsan.ten }} <br>
-                        <strong>Quantity:</strong> {{ detail.quantity }} <br>
-                        <strong>Price:</strong> {{ detail.id_nongsan.gia }} <br>
+    {% if orders %}
+      {% for order in orders %}
+        <div class="card mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+              <strong>Mã đơn hàng:</strong> {{ order.madonhang }}<br>
+              <small>Ngày mua: {{ order.ngaydat }}</small>
+            </div>
+            <div class="badge badge-secondary">{{ order.trangthai }}</div>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-8">
+                <ul class="list-group list-group-flush">
+                  {% for detail in order.donhangdetail_set.all %}
+                    <li class="list-group-item">
+                      <div class="d-flex align-items-center">
                         {% if detail.id_nongsan.image %}
-                          <img src="{{ detail.id_nongsan.image.url }}" alt="{{ detail.id_nongsan.ten }}" width="100"> <br>
+                          <img src="{{ detail.id_nongsan.image.url }}" alt="{{ detail.id_nongsan.ten }}" class="img-thumbnail mr-3" width="100">
                         {% endif %}
-                      </li>
-                    {% endfor %}
-                  </ul>
-                </td>
-                <td>
-                  {% if order.trangthai == "Pending" or order.trangthai == "Đã nhận hàng" or order.trangthai == "Bị huỷ" %}
-                    <button class="btn btn-success" hidden>Đã nhận hàng</button>
-                  {% else %}
-                    <a href="{% url 'order_received' order.madonhang %}" class="btn btn-primary">Đã nhận hàng</a>
-                    
-                  {% endif %}
-                  {% if order.trangthai == "Pending" %}
-                    <a href="{% url 'cancel_order' order.madonhang %}" class="btn btn-danger">Hủy đơn</a>
-                  {% endif %}
-                </td>
-                
-              </tr>
-            {% endfor %}
-          {% else %}
-            <tr>
-              <td colspan="6">No orders found.</td>
-            </tr>
-          {% endif %}
-        </tbody>
-      </table>
-    </div>
+                        <div>
+                          <strong>Sản phẩm:</strong> {{ detail.id_nongsan.ten }}<br>
+                          <strong>Số lượng:</strong> {{ detail.quantity }}<br>
+                          <strong>Giá:</strong> {{ detail.id_nongsan.gia | intcomma }} đ
+                        </div>
+                      </div>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+              <div class="col-md-4 text-right">
+                <div class="mb-3">
+                  <strong>Thành tiền:</strong> {{ order.tonggia | intcomma }} đ
+                </div>
+                {% if order.trangthai == "Completed" %}
+                <a href="{% url 'order_received' order.madonhang %}" class="btn btn-primary mb-2">Đã nhận hàng</a>
+              {% endif %}
+              {% if order.trangthai != "Đã nhận hàng" and order.trangthai != "Bị Huỷ" and order.trangthai != "Completed" %}
+                <a href="{% url 'cancel_order' order.madonhang %}" class="btn btn-danger mb-2">Hủy đơn</a>
+              {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="alert alert-info text-center" role="alert">
+        Không có đơn hàng nào.
+      </div>
+    {% endif %}
   </div>
 </div>
+
+
 <!-- Cart Page End -->
 
 {% include "user/footer.html" %}
