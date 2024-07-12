@@ -22,7 +22,7 @@ from django.db.models.functions import TruncDate
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import matplotlib.pyplot as plt
 from io import BytesIO
-
+from datetime import datetime
 
 def doanh_thu_theo_ngay(request):
     # Tính toán doanh thu theo từng ngày
@@ -412,7 +412,7 @@ def checkout(request):
                         madonhang=f"DH_{uuid.uuid4()}",
                         manguoidung=user,
                         tonggia=total_price,
-                        ngaydat=date.today(),
+                        ngaydat=datetime.now(),
                         trangthai='Pending',
                     )
 

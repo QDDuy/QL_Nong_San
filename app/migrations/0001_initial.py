@@ -152,7 +152,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('madonhang', models.CharField(db_column='MaDonHang', max_length=50, primary_key=True, serialize=False)),
                 ('tonggia', models.DecimalField(blank=True, db_column='TongGia', decimal_places=2, max_digits=15, null=True)),
-                ('ngaydat', models.DateField(blank=True, db_column='NgayDat', null=True)),
+                ('ngaydat', models.DateTimeField(blank=True, db_column='NgayDat', null=True)),
                 ('trangthai', models.CharField(blank=True, db_column='TrangThai', max_length=50, null=True)),
             ],
             options={

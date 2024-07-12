@@ -128,7 +128,7 @@ class Donhang(models.Model):
     madonhang = models.CharField(db_column='MaDonHang', primary_key=True, max_length=50)  # Field name made lowercase.
     manguoidung = models.ForeignKey('Nguoidung', models.DO_NOTHING, db_column='MaNguoiDung', blank=True, null=True)  # Field name made lowercase.
     tonggia = models.DecimalField(db_column='TongGia', max_digits=15, decimal_places=2, blank=True, null=True)  # Field name made lowercase.
-    ngaydat = models.DateField(db_column='NgayDat', blank=True, null=True)  # Field name made lowercase.
+    ngaydat = models.DateTimeField(db_column='NgayDat', blank=True, null=True)  # Field name made lowercase.
     trangthai = models.CharField(db_column='TrangThai', max_length=50, blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
